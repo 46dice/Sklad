@@ -29,12 +29,12 @@ export function Auth() {
 	}
 
 	const onSubmit: SubmitHandler<IAuthFormData> = data => {
-		console.log(data)
+		console.log(data.email, data.password)
 	}
 
 	return (
 		<DismissKeyboard>
-			<View className='bg-black items-center justify-center h-full'>
+			<View className='items-center justify-center h-full'>
 				<View className='items-center w-9/12'>
 					<Text className='color-white text-6xl mb-3 font-bold'>{text}</Text>
 
@@ -65,7 +65,9 @@ export function Auth() {
 						}}
 					/>
 
-					<Button onPress={() => handleSubmit(onSubmit)} icon='archive'>
+					<Button 
+					onPress={() => handleSubmit(onSubmit)} 
+					icon='archive'>
 						Начать работу
 					</Button>
 				</View>

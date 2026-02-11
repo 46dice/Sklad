@@ -4,12 +4,18 @@
     "slug": "express_storehouse",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/react-logo@3x.png",
+    "backgroundColor": "#111111",
     "scheme": "sklad",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true
+    },
+    "splash": {
+      "image": "./assets/images/react-logo@3x.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#111111"
     },
     "android": {
       "adaptiveIcon": {
@@ -31,13 +37,10 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/images/react-logo@3x.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
-          "dark": {
-            "backgroundColor": "#000000"
-          }
+          "backgroundColor": "#111111"
         }
       ]
     ],

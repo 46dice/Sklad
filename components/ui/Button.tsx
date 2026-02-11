@@ -1,11 +1,16 @@
 import { TypeFeatherIconNames } from '@/shared/types/icon.types'
-import cn from 'clsx'
-import { FC, PropsWithChildren } from 'react'
-import { Pressable, PressableProps, Text, View } from 'react-native'
-import { LinearGradient } from 'expo-linear-gradient'
 import { Feather } from '@expo/vector-icons'
+import cn from 'clsx'
+import { LinearGradient } from 'expo-linear-gradient'
+import { FC, PropsWithChildren } from 'react'
+import {
+	Text,
+	TouchableHighlight,
+	TouchableHighlightProps,
+	View
+} from 'react-native'
 
-type Props = PressableProps & {
+type Props = TouchableHighlightProps & {
 	className?: string
 	icon?: TypeFeatherIconNames
 }
@@ -17,7 +22,7 @@ export const Button: FC<PropsWithChildren<Props>> = ({
 	...rest
 }) => {
 	return (
-		<Pressable
+		<TouchableHighlight
 			className={cn('self-center rounded-2xl overflow-hidden', className)}
 			{...rest}
 		>
@@ -40,6 +45,6 @@ export const Button: FC<PropsWithChildren<Props>> = ({
 					</Text>
 				</View>
 			</LinearGradient>
-		</Pressable>
+		</TouchableHighlight>
 	)
 }
