@@ -1,4 +1,4 @@
-import { TypeFeatherIconNames } from '@/shared/icon.types'
+import { TypeFeatherIconNames } from '@/shared/types/icon.types'
 import cn from 'clsx'
 import { FC, PropsWithChildren } from 'react'
 import { Pressable, PressableProps, Text, View } from 'react-native'
@@ -25,17 +25,16 @@ export const Button: FC<PropsWithChildren<Props>> = ({
 				className={cn('w-full items-center ', {
 					'flex-row': !!icon
 				})}
+				start={{ x: 0.1, y: 0.2 }}
+				end={{ x: 1, y: 1 }}
 				colors={['#DC3F41', '#a6282b']}
 			>
-				<View className='flex-row'>
+				<View className='py-3 px-8 text-center flex-row items-center'>
 					{icon && <Feather name={icon} size={18} color={'white'} />}
 					<Text
-						className={cn(
-							'text-white py-3 px-8 text-center font-medium text-lg',
-							{
-								'ml-2': !!icon
-							}
-						)}
+						className={cn('text-white font-medium text-lg', {
+							'ml-2': !!icon
+						})}
 					>
 						{children}
 					</Text>

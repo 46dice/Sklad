@@ -16,9 +16,19 @@ module.exports = {
 			red: colors.red['500']
 		},
 		extend: {
+			colors: {
+			primary: '#BF3335',
+			gray: {
+				default: '#282828',
+				500: '#1D1D1D'
+			},
+			black: '#030207',
+			white: colors.white,
+			red: colors.red['500']
+		},
 			zIndex: {
 				1: '1'
-			}
+			},
 		}
 	},
 	plugins: []

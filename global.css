@@ -3,3 +3,8 @@
 @import 'tailwindcss/utilities.css';
 
 @import 'nativewind/theme';
+
+@theme {
+	--color-primary: #BF3335;
+	--color-red: oklch(63.7% 0.237 25.331)
+}
