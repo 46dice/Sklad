@@ -1,8 +1,10 @@
 import { Button } from '@/components/ui/Button'
 import DismissKeyboard from '@/components/ui/DismissKeyboard'
 import { Input } from '@/components/ui/Input'
+import { useAuth } from '@/hooks/useAuth'
 import { validEmail } from '@/shared/reges'
 import { IAuthFormData } from '@/shared/types/auth.types'
+import { Redirect } from 'expo-router'
 import { useState } from 'react'
 import { SubmitHandler, useForm } from 'react-hook-form'
 import { Text, View } from 'react-native'
@@ -12,8 +14,10 @@ enum TypeAuth {
 	Login = 'Войти'
 }
 
-export function Auth() {
+export default function Auth() {
 	const [typeAuth, setTypeAuth] = useState<TypeAuth>(TypeAuth.Register)
+
+	const { user, handleLogin, handleRegister, isLoading } = useAuth()
 
 	const { control, handleSubmit, reset } = useForm<IAuthFormData>({
 		mode: 'onChange'
@@ -22,14 +26,33 @@ export function Auth() {
 	const text =
 		typeAuth === TypeAuth.Register ? TypeAuth.Register : TypeAuth.Login
 
+	const isRegister = typeAuth === TypeAuth.Register
+
 	const onToggleTypeAuth = () => {
 		setTypeAuth(prev =>
 			prev === TypeAuth.Register ? TypeAuth.Login : TypeAuth.Register
 		)
 	}
 
-	const onSubmit: SubmitHandler<IAuthFormData> = data => {
-		console.log(data.email, data.password)
+	const onSubmit: SubmitHandler<IAuthFormData> = async ({
+		email,
+		password
+	}) => {
+		if (isRegister) {
+			await handleRegister(email, password)
+		} else {
+			await handleLogin(email, password)
+		}
+	}
+
+	console.log(isLoading)
+
+	if (isLoading) {
+		return <Text>LOADING</Text>
+	}
+
+	if (user) {
+		return <Redirect href='/app/(tabs)/monitoring' />
 	}
 
 	return (
@@ -65,10 +88,22 @@ export function Auth() {
 						}}
 					/>
 
-					<Button 
-					onPress={() => handleSubmit(onSubmit)} 
-					icon='archive'>
-						Начать работу
+					<Text
+						onPress={onToggleTypeAuth}
+						className='text-gray-500 ml-auto text-sm mb-6'
+					>
+						{isRegister
+							? 'Есть аккаунт? Войти'
+							: 'Нет аккаунта? Зарегистрироваться'}
+					</Text>
+
+					<Button
+						className='w-[250px]'
+						isLoading={isLoading}
+						onPress={handleSubmit(onSubmit)}
+						icon='git-commit'
+					>
+						{isRegister ? 'Зарегистрироваться' : 'Начать работу'}
 					</Button>
 				</View>
 			</View>

@@ -3,10 +3,11 @@ import { FC } from 'react'
 
 type Props = {}
 
-export const Monitoring: FC<Props> = () => {
+const MonitoringScreen: FC<Props> = () => {
 	return (
 		<View>
 			<Text className='text-white'>Monitoring</Text>
 		</View>
 	)
 }
+export default MonitoringScreen

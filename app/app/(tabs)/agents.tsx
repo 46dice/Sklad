@@ -3,10 +3,11 @@ import { FC } from 'react'
 
 type Props = {}
 
-export const Products: FC<Props> = () => {
+const Agents: FC<Props> = () => {
 	return (
 		<View>
-			<Text className='text-white'>Products</Text>
+			<Text className='text-white'>Agents</Text>
 		</View>
 	)
 }
+export default Agents

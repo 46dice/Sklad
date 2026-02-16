@@ -17,6 +17,6 @@ type TypeRootStackAdminList = {
 
 export interface IRoute {
 	name: keyof TypeRootStackParamList
-	component: ComponentType
+	title: string
 	isAdmin?: boolean
 }

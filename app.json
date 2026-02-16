@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/react-logo@3x.png",
-    "backgroundColor": "#111111",
+    "backgroundColor": "#090909",
     "scheme": "sklad",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,

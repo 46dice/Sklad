@@ -26,7 +26,7 @@ export const MenuItem: FC<Props> = ({
 			className={cn('items-center justify-center p-2', {
 				'color-primary': isActive
 			})}
-			onPress={() => nav(link)}
+			onPress={() => {}}
 		>
 			<Feather name={icon} size={16} color={isActive ? '#BF3335' : '#6a7282'} />
 			<Text className={cn('text-gray-500', isActive && 'text-primary')}>

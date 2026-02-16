@@ -4,18 +4,12 @@ import { getCities } from '@/firebase'
 
 type Props = {}
 
-export const Documents: FC<Props> = () => {
-
-	// useEffect(() => {
-	// 	const get = async () => {
-	// 		await getCities()
-	// 		console.log(get)
-	// 	}
-	// 	get()
-	// }, [])
+const Documents: FC<Props> = () => {
+	
 	return (
 		<View>
 			<Text className='text-white'>Documents</Text>
 		</View>
 	)
 }
+export default Documents

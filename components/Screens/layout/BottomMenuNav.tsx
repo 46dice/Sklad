@@ -1,9 +1,9 @@
+import { TypeRootStackParamList } from '@/navigation/navigation.types'
 import { FC } from 'react'
 import { StyleSheet, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { menuData } from './menu.data'
 import { MenuItem } from './MenuItem'
-import { TypeRootStackParamList } from '@/navigation/navigation.types'
 
 type Props = {
 	currentRoute?: string

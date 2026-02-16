@@ -1,9 +1,16 @@
 // Import the functions you need from the SDKs you need
+import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage'
 import { initializeApp } from 'firebase/app'
+import {
+	createUserWithEmailAndPassword,
+	initializeAuth,
+	signInWithEmailAndPassword,
+	getReactNativePersistence
+} from 'firebase/auth'
 import { collection, getDocs, getFirestore } from 'firebase/firestore/lite'
+
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
-
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
@@ -19,7 +26,31 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig)
-const db = getFirestore(app)
+export const db = getFirestore(app)
+
+// export const auth = getAuth(app)
+
+export const auth = initializeAuth(app, {
+	persistence: getReactNativePersistence(ReactNativeAsyncStorage)
+})
+
+export const onRegister = async (email: string, password: string) => {
+	try {
+		const response = await createUserWithEmailAndPassword(auth, email, password)
+		return response
+	} catch (error: any) {
+		throw new Error(error)
+	}
+}
+
+export const onLogin = async (email: string, password: string) => {
+	try {
+		const response = await signInWithEmailAndPassword(auth, email, password)
+		return response
+	} catch (error: any) {
+		throw new Error(error)
+	}
+}
 
 export async function getCities() {
 	const citiesCol = collection(db, 'users')
