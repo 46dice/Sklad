@@ -50,7 +50,7 @@ export const Button: FC<PropsWithChildren<Props>> = ({
 						</Text>
 					)}
 					{isLoading && (
-						<ActivityIndicator size={'large'} color={Colors.gray500} />
+						<ActivityIndicator size={'large'} color={Colors.white} />
 					)}
 				</View>
 			</LinearGradient>

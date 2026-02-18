@@ -1,5 +1,5 @@
 import { auth, db, onLogin, onRegister } from '@/firebase'
-import { Auth, getIdToken, getIdTokenResult, User } from 'firebase/auth'
+import { Auth, User } from 'firebase/auth'
 import { doc, setDoc } from 'firebase/firestore/lite'
 import {
 	createContext,
@@ -34,6 +34,7 @@ export const AuthProvider: FC<PropsWithChildren> = ({ children }) => {
 			const user = await onLogin(email, password)
 			return user
 		} catch (error: any) {
+			console.log(error)
 			throw new Error(error)
 		} finally {
 			setIsLoading(false)
@@ -61,23 +62,6 @@ export const AuthProvider: FC<PropsWithChildren> = ({ children }) => {
 			setIsLoading(false)
 		}
 	}
-
-	// useEffect(() => {
-	// 	let mounted = true
-
-	// 	const checkAccessToken = async () => {
-	// 		try {
-	// 		} catch (error) {
-	// 		} finally {
-	// 			setIsLoading(false)
-	// 		}
-	// 	}
-	// 	// checkAccessToken()
-
-	// 	return () => {
-	// 		mounted = false
-	// 	}
-	// }, [])
 
 	useEffect(() => {
 		setIsLoading(true)

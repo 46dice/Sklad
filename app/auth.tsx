@@ -45,11 +45,9 @@ export default function Auth() {
 		}
 	}
 
-	console.log(isLoading)
-
-	if (isLoading) {
-		return <Text>LOADING</Text>
-	}
+	// if (isLoading) {
+	// 	return <Text>LOADING</Text>
+	// }
 
 	if (user) {
 		return <Redirect href='/app/(tabs)/monitoring' />
@@ -59,8 +57,7 @@ export default function Auth() {
 		<DismissKeyboard>
 			<View className='items-center justify-center h-full'>
 				<View className='items-center w-9/12'>
-					<Text className='color-white text-6xl mb-3 font-bold'>{text}</Text>
-
+					<Text className='color-white text-5xl mb-3 font-bold'>{text}</Text>
 					<Input<IAuthFormData>
 						name='email'
 						keyboardType='email-address'

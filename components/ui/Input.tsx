@@ -48,7 +48,7 @@ export const Input = <T extends Record<string, any>>({
 							onChangeText={onChange}
 							onBlur={onBlur}
 							value={(value || '').toString()}
-							className='text-white text-base'
+							className='text-white text-base placeholder:color-gray-300'
 							{...rest}
 						/>
 					</View>
