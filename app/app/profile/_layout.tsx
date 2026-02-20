@@ -1,4 +1,4 @@
-import GoBackScreen from '@/components/GoBackScreen/GoBackScreen'
+import GoBackArrowButton from '@/components/GoBackArrowButton'
 import { Colors } from '@/shared/constants/Colors'
 import { Stack } from 'expo-router'
 
@@ -20,7 +20,7 @@ export default function _layout() {
 				options={{
 					title:'Профиль',
 					headerLeft: () => (
-						<GoBackScreen />
+						<GoBackArrowButton />
 					)
 				}}
 			/>

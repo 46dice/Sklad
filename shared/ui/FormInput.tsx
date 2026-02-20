@@ -19,12 +19,14 @@ interface Props<T extends FieldValues> extends Omit<
 		RegisterOptions<T, FieldPath<T>>,
 		'valueAsNumber' | 'valueAsDate' | 'setValueAs' | 'disabled'
 	>
+	label?: string
 }
 
-export const Input = <T extends Record<string, any>>({
+export const FormInput = <T extends Record<string, any>>({
 	control,
 	rules,
 	name,
+	label,
 	...rest
 }: Props<T>): JSX.Element => {
 	return (

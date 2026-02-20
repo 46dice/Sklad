@@ -1,9 +1,9 @@
-import { Button } from '@/components/ui/Button'
-import DismissKeyboard from '@/components/ui/DismissKeyboard'
-import { Input } from '@/components/ui/Input'
 import { useAuth } from '@/hooks/useAuth'
 import { validEmail } from '@/shared/reges'
 import { IAuthFormData } from '@/shared/types/auth.types'
+import { Button } from '@/shared/ui/Button'
+import DismissKeyboard from '@/shared/ui/DismissKeyboard'
+import { FormInput } from '@/shared/ui/FormInput'
 import { Redirect } from 'expo-router'
 import { useState } from 'react'
 import { SubmitHandler, useForm } from 'react-hook-form'
@@ -58,7 +58,7 @@ export default function Auth() {
 			<View className='items-center justify-center h-full'>
 				<View className='items-center w-9/12'>
 					<Text className='color-white text-5xl mb-3 font-bold'>{text}</Text>
-					<Input<IAuthFormData>
+					<FormInput<IAuthFormData>
 						name='email'
 						keyboardType='email-address'
 						placeholder='Email'
@@ -71,7 +71,7 @@ export default function Auth() {
 							}
 						}}
 					/>
-					<Input<IAuthFormData>
+					<FormInput<IAuthFormData>
 						placeholder='Password'
 						name='password'
 						keyboardType='visible-password'

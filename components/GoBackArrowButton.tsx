@@ -2,8 +2,9 @@ import { Ionicons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
 import { Platform } from 'react-native'
 
-export default function GoBackScreen() {
+export default function GoBackArrowButton() {
 	const router = useRouter()
+	
 	return (
 		<Ionicons
 			name={Platform.OS === 'ios' ? 'chevron-back' : 'arrow-back'}

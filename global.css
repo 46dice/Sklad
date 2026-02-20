@@ -6,5 +6,9 @@
 
 @theme {
 	--color-primary: #BF3335;
-	--color-red: oklch(63.7% 0.237 25.331)
+	--color-secondary: #FFE773;
+	--color-black:: #090909;
+	--color-red: oklch(63.7% 0.237 25.331);
+	--color-gray500: #6B7280;
+	--color-white: #FFFAFA;
 }

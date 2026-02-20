@@ -1,6 +1,5 @@
-import { Text, View } from 'react-native'
 import { FC } from 'react'
-import { GoToProfile } from '@/components/profile/GoToProfile'
+import { Text, View } from 'react-native'
 
 type Props = {}
 

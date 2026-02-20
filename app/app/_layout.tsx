@@ -24,6 +24,13 @@ export default function AppLayout() {
 				}}
 			>
 				<Stack.Screen name='(tabs)' />
+				<Stack.Screen
+					name='(NewClient)/modal'
+					options={{
+						headerTitle: 'Добавить агента',
+						presentation: 'modal'
+					}}
+				/>
 			</Stack>
 		</SafeAreaProvider>
 	)
