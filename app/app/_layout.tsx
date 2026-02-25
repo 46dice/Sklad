@@ -6,6 +6,7 @@ import {
 	SafeAreaProvider,
 	useSafeAreaInsets
 } from 'react-native-safe-area-context'
+import { Text } from 'react-native'
 
 export default function AppLayout() {
 	const { top } = useSafeAreaInsets()
@@ -27,8 +28,19 @@ export default function AppLayout() {
 				<Stack.Screen
 					name='(NewClient)/modal'
 					options={{
-						headerTitle: 'Добавить агента',
-						presentation: 'modal'
+						headerTitle: 'Добавить клиента',
+						presentation: 'modal',
+						headerShown: true,
+						headerStyle: {
+							backgroundColor: Colors.black
+						},
+						headerTitleStyle: {
+							color: Colors.white
+						},
+						contentStyle: {
+							backgroundColor: Colors.black,
+							paddingTop: 0
+						}
 					}}
 				/>
 			</Stack>

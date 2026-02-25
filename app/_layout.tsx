@@ -1,6 +1,7 @@
 import { SplashScreenController } from '@/components/Splash'
 import { useAuth } from '@/hooks/useAuth'
 import { AuthProvider } from '@/providers/auth/AuthProvider'
+import Toast from 'react-native-toast-message'
 import { Slot } from 'expo-router'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import '../global.css'
@@ -8,6 +9,7 @@ import '../global.css'
 export default function Root() {
 	return (
 		<AuthProvider>
+			<Toast position='top' />
 			<SafeAreaProvider>
 				<SplashScreenController />
 				<RootNavigator />
@@ -36,4 +38,3 @@ function RootNavigator() {
 		<Slot />
 	)
 }
-

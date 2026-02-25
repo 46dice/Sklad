@@ -18,6 +18,7 @@ type Props = TouchableHighlightProps & {
 	isLoading?: boolean
 	variant?: 'primary' | 'ghost'
 	size?: 'small' | 'medium' | 'large'
+	disabled?: boolean
 }
 
 export const Button: FC<PropsWithChildren<Props>> = ({
@@ -27,11 +28,13 @@ export const Button: FC<PropsWithChildren<Props>> = ({
 	isLoading = false,
 	variant = 'primary',
 	size = 'medium',
+	disabled = false,
 	...rest
 }) => {
 	return (
 		<TouchableHighlight
 			className={cn('self-center rounded-2xl overflow-hidden', className)}
+			disabled={disabled || isLoading}
 			{...rest}
 		>
 			<LinearGradient
@@ -41,9 +44,11 @@ export const Button: FC<PropsWithChildren<Props>> = ({
 				start={{ x: 0.1, y: 0.2 }}
 				end={{ x: 1, y: 1 }}
 				colors={
-					variant === 'primary'
-						? ['#DC3F41', '#a6282b']
-						: ['transparent', 'transparent']
+					disabled
+						? ['#888888', '#888888']
+						: variant === 'primary'
+							? ['#DC3F41', '#a6282b']
+							: ['transparent', 'transparent']
 				}
 			>
 				<View className='py-3 px-8 text-center flex-row items-center justify-center'>

@@ -1,1 +1,0 @@
-export const FNS_API_KEY = process.env.EXPO_PUBLIC_FIREBASE_API_KEY
