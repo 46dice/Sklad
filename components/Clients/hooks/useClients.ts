@@ -19,7 +19,6 @@ export const useClients = () => {
 			setIsLoading(true)
 			const clientsCollection = collection(db, 'users', user.uid, 'clients')
 			const querySnapshot = await getDocs(clientsCollection)
-			console.log(querySnapshot)
 			const clientsList = querySnapshot.docs.map(doc => {
 				const data = doc.data()
 				return {
@@ -35,6 +34,10 @@ export const useClients = () => {
 			setIsLoading(false)
 		}
 	}, [user])
+
+	useEffect(() => {
+		fetchClients()
+	}, [fetchClients])
 
 	const searchClients = useCallback(
 		(query: string) => {
