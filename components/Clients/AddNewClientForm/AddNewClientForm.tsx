@@ -1,54 +1,87 @@
+import { useAuth } from '@/hooks/useAuth'
 import { validEmail } from '@/shared/reges'
 import { INewClientForm } from '@/shared/types/clients.types'
 import { Button } from '@/shared/ui/Button'
 import { FormInput } from '@/shared/ui/FormInput'
-import { Controller, useForm } from 'react-hook-form'
-import { Switch, Text, View } from 'react-native'
-import { useNewClient } from './useNewClient'
+import { isEqual } from 'lodash'
 import { useEffect } from 'react'
+import { Controller, useForm } from 'react-hook-form'
+import { Pressable, Switch, Text, View } from 'react-native'
+import useClientStore, { initialFormState } from '../client.model'
+import { useNewClient } from '../hooks/useNewClient'
+import { useClients } from '../hooks/useClients'
 
-type Props = {}
+export default function AddNewClientForm() {
+	const { newClientFormState, updateFormState, setSubmitFunction, resetForm } =
+		useClientStore()
 
-export default function AddNewClientForm({}: Props) {
-	const { control, handleSubmit, reset, watch, setValue } =
-		useForm<INewClientForm>({
-			mode: 'onChange',
-			defaultValues: {
-				isPhysicalPerson: false
-			}
-		})
+	const { user } = useAuth()
+
+	const { control, watch, reset, setValue } = useForm<INewClientForm>({
+		mode: 'onChange',
+		defaultValues: newClientFormState
+	})
 
 	const {
 		control: controlINN,
 		handleSubmit: handleSubmitINN,
-		reset: resetINN,
 		formState: formStateINN
 	} = useForm<{ inn: string }>({
 		mode: 'onChange'
 	})
-	const { fetchClientINN, data, isLoading } = useNewClient()
 
+	const { fetchClientINN, data, isLoading, fetchAddNewClient } = useNewClient()
+	const { fetchClients } = useClients()
 	const isPhysicalPerson = watch('isPhysicalPerson')
+
+	useEffect(() => {
+		reset(newClientFormState)
+	}, [newClientFormState, reset])
 
 	useEffect(() => {
 		if (data?.suggestions?.[0]) {
 			const client = data.suggestions[0]
 			const ipData = client.data
 
-			const email = ipData.emails?.[0]?.value || ''
-			console.log('email', ipData)
-			setValue('name', ipData.name.full)
-			setValue('phone', ipData.phones?.[0]?.value || '')
-			setValue('email', email)
-			setValue('actualAddress', ipData.address.value)
-			setValue('fullName', ipData.name.full)
-			setValue('legalAddress', ipData.address.value)
-			setValue('inn', ipData.inn)
-			setValue('ogrn', ipData.ogrn)
-			setValue('okpo', ipData.okpo)
+			const formData: INewClientForm = {
+				name: ipData.name.full,
+				phone: ipData.phones?.[0]?.value || '',
+				email: ipData.emails?.[0]?.value || '',
+				actualAddress: ipData.address.value,
+				fullName: ipData.name.full,
+				legalAddress: ipData.address.value,
+				inn: ipData.inn,
+				ogrn: ipData.ogrn,
+				okpo: ipData.okpo,
+				isPhysicalPerson: newClientFormState.isPhysicalPerson
+			}
 
+			Object.entries(formData).forEach(([key, value]) => {
+				setValue(key as keyof INewClientForm, value)
+			})
+
+			updateFormState(formData)
 		}
-	}, [data, setValue])
+	}, [
+		data?.suggestions,
+		newClientFormState.isPhysicalPerson,
+		setValue,
+		updateFormState
+	])
+
+	useEffect(() => {
+		setSubmitFunction(async (data: INewClientForm) => {
+			if (user && !isEqual(initialFormState, data)) {
+				fetchAddNewClient(user.uid, data)
+				fetchClients()
+			}
+			resetForm()
+		})
+	}, [fetchAddNewClient, fetchClients, resetForm, setSubmitFunction, user])
+
+	const onFormChange = (data: Partial<INewClientForm>) => {
+		updateFormState(data)
+	}
 
 	const onSubmitSearchInn = async ({ inn }: { inn: string }) => {
 		if (!inn.length) {
@@ -102,12 +135,14 @@ export default function AddNewClientForm({}: Props) {
 					rules={{
 						required: 'Наименование обязательно!'
 					}}
+					onChangeText={text => onFormChange({ name: text })}
 				/>
 				<FormInput<INewClientForm>
 					name='phone'
 					control={control}
 					placeholder='Телефон'
 					keyboardType='phone-pad'
+					onChangeText={text => onFormChange({ phone: text })}
 				/>
 				<FormInput<INewClientForm>
 					name='email'
@@ -120,12 +155,23 @@ export default function AddNewClientForm({}: Props) {
 							message: 'Некорректный email'
 						}
 					}}
+					onChangeText={text => onFormChange({ email: text })}
 				/>
 				<FormInput<INewClientForm>
 					name='actualAddress'
 					control={control}
 					placeholder='Фактический Адрес'
+					onChangeText={text => onFormChange({ actualAddress: text })}
 				/>
+			</View>
+
+			<View className='gap-1 mb-2'>
+				<Text className='uppercase text-sm text-white'>Расчетный счет</Text>
+				<Pressable className='bg-[#232323] w-full border rounded-lg pb-4 pt-2.5 px-4'>
+					<Text className='text-white text-center'>
+						+ Добавить расчетный счет
+					</Text>
+				</Pressable>
 			</View>
 
 			<View className='flex-row items-center justify-between mb-2'>
@@ -137,47 +183,53 @@ export default function AddNewClientForm({}: Props) {
 							control={control}
 							name='isPhysicalPerson'
 							render={({ field: { value, onChange } }) => (
-								<Switch value={value} onValueChange={onChange} />
+								<Switch
+									value={value}
+									onValueChange={newValue => {
+										onChange(newValue)
+										onFormChange({ isPhysicalPerson: newValue })
+									}}
+								/>
 							)}
 						/>
 					</View>
 				</View>
 			</View>
+
 			{!isPhysicalPerson ? (
 				<View className='gap-1'>
 					<FormInput<INewClientForm>
 						name='fullName'
 						control={control}
 						placeholder='Полное наименование'
+						onChangeText={text => onFormChange({ fullName: text })}
 					/>
 					<FormInput<INewClientForm>
 						name='legalAddress'
 						control={control}
 						placeholder='Адрес'
+						onChangeText={text => onFormChange({ legalAddress: text })}
 					/>
 					<FormInput<INewClientForm>
 						name='inn'
 						control={control}
 						placeholder='ИНН'
 						keyboardType='numeric'
-					/>
-					<FormInput<INewClientForm>
-						name='kpp'
-						control={control}
-						placeholder='КПП'
-						keyboardType='numeric'
+						onChangeText={text => onFormChange({ inn: text })}
 					/>
 					<FormInput<INewClientForm>
 						name='ogrn'
 						control={control}
 						placeholder='ОГРН'
 						keyboardType='numeric'
+						onChangeText={text => onFormChange({ ogrn: text })}
 					/>
 					<FormInput<INewClientForm>
 						name='okpo'
 						control={control}
 						placeholder='ОКПО'
 						keyboardType='numeric'
+						onChangeText={text => onFormChange({ okpo: text })}
 					/>
 				</View>
 			) : null}

@@ -19,7 +19,7 @@ export default function Auth() {
 
 	const { user, handleLogin, handleRegister, isLoading } = useAuth()
 
-	const { control, handleSubmit, reset } = useForm<IAuthFormData>({
+	const { control, handleSubmit } = useForm<IAuthFormData>({
 		mode: 'onChange'
 	})
 
@@ -45,10 +45,6 @@ export default function Auth() {
 		}
 	}
 
-	// if (isLoading) {
-	// 	return <Text>LOADING</Text>
-	// }
-
 	if (user) {
 		return <Redirect href='/app/(tabs)/monitoring' />
 	}
@@ -70,12 +66,14 @@ export default function Auth() {
 								message: 'Введите валидную почту'
 							}
 						}}
+						boxClassname='mb-2'
 					/>
 					<FormInput<IAuthFormData>
 						placeholder='Password'
 						name='password'
 						keyboardType='visible-password'
 						control={control}
+						boxClassname='mb-2'
 						rules={{
 							required: 'Пароль обязателен!',
 							minLength: {

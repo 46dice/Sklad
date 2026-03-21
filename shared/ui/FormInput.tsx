@@ -9,10 +9,8 @@ import {
 } from 'react-hook-form'
 import { Text, TextInput, TextInputProps, View } from 'react-native'
 
-interface Props<T extends FieldValues> extends Omit<
-	TextInputProps,
-	'onChange' | 'onChangeText' | 'value'
-> {
+interface Props<T extends FieldValues> extends TextInputProps {
+	// Наследуем все пропсы TextInput
 	control: Control<T>
 	name: FieldPath<T>
 	rules?: Omit<
@@ -20,6 +18,7 @@ interface Props<T extends FieldValues> extends Omit<
 		'valueAsNumber' | 'valueAsDate' | 'setValueAs' | 'disabled'
 	>
 	label?: string
+	boxClassname?: string
 }
 
 export const FormInput = <T extends Record<string, any>>({
@@ -27,6 +26,7 @@ export const FormInput = <T extends Record<string, any>>({
 	rules,
 	name,
 	label,
+	boxClassname,
 	...rest
 }: Props<T>): JSX.Element => {
 	return (
@@ -42,6 +42,7 @@ export const FormInput = <T extends Record<string, any>>({
 					<View
 						className={cn(
 							'bg-[#232323] w-full border rounded-lg pb-4 pt-2.5 px-4',
+							boxClassname,
 							error ? 'border-red' : 'border-transparent'
 						)}
 					>

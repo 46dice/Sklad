@@ -53,7 +53,7 @@ export const AuthProvider: FC<PropsWithChildren> = ({ children }) => {
 				uid: user.uid
 			}
 
-			await setDoc(doc(db, 'users', user.uid), { newUser })
+			await setDoc(doc(db, 'users', user.uid), newUser )
 
 			return userCredential
 		} catch (error: any) {
