@@ -1,16 +1,24 @@
 import { useClients } from '@/components/Clients/hooks/useClients'
 import { useProducts } from '@/components/Products/hooks/useProducts'
 import { useSales } from '@/components/Products/hooks/useSales'
-import { QuickSaleModal } from '@/components/Products/QuickSaleModal'
 import { useAuth } from '@/hooks/useAuth'
 import { Feather } from '@expo/vector-icons'
+import { useRouter } from 'expo-router'
 import { FC, useState } from 'react'
-import { Dimensions, Modal, Pressable, ScrollView, Text, View } from 'react-native'
+import {
+	Dimensions,
+	Modal,
+	Pressable,
+	ScrollView,
+	Text,
+	View
+} from 'react-native'
 import { LineChart } from 'react-native-chart-kit'
 
 type Props = {}
 
 const MonitoringScreen: FC<Props> = () => {
+	const router = useRouter()
 	const { user } = useAuth()
 	const { clients } = useClients()
 	const { products, refreshProducts } = useProducts()
@@ -22,13 +30,14 @@ const MonitoringScreen: FC<Props> = () => {
 		fetchSales
 	} = useSales()
 
-	const [selectProductModalVisible, setSelectProductModalVisible] = useState(false)
-	const [salesModalVisible, setSalesModalVisible] = useState(false)
-	const [selectedProduct, setSelectedProduct] = useState<any>(null)
+	const [selectProductModalVisible, setSelectProductModalVisible] =
+		useState(false)
 
 	const chartData = getSalesChartData()
 	const stats = getPeriodStats()
 	const screenWidth = Dimensions.get('window').width
+	const screenHeight = Dimensions.get('window').height
+	const chartHeight = Math.floor(screenHeight * 0.5)
 
 	const filterButtons = [
 		{ label: 'Сегодня', value: 'today' as const },
@@ -37,15 +46,11 @@ const MonitoringScreen: FC<Props> = () => {
 	]
 
 	const handleSelectProduct = (product: any) => {
-		setSelectedProduct(product)
 		setSelectProductModalVisible(false)
-		setSalesModalVisible(true)
-	}
-
-	const handleSaleAdded = async () => {
-		await fetchSales()
-		await refreshProducts()
-		setSelectedProduct(null)
+		router.push({
+			pathname: '/app/(QuickSale)/modal',
+			params: { product: JSON.stringify(product) }
+		})
 	}
 
 	return (
@@ -64,119 +69,131 @@ const MonitoringScreen: FC<Props> = () => {
 			{/* Scrollable content */}
 			<ScrollView className='flex-1' contentContainerStyle={{ padding: 16 }}>
 				<View className='gap-4'>
-				{/* Фильтры графика */}
-				<View>
-					<Text className='text-gray-500 text-xs font-semibold mb-2'>ПЕРИОД</Text>
-					<View className='flex-row gap-2'>
-						{filterButtons.map(btn => (
-							<Pressable
-								key={btn.value}
-								onPress={() => setFilterPeriod(btn.value)}
-								className={`flex-1 py-2 px-3 rounded-lg ${
-									filterPeriod === btn.value ? 'bg-primary' : 'bg-gray-default'
-								}`}
-							>
-								<Text className='text-white text-center font-semibold text-xs'>
-									{btn.label}
+					{/* График продаж */}
+					<View className='bg-gray-default rounded-lg p-4 overflow-hidden'>
+						<Text className='text-white text-lg font-semibold mb-4'>
+							Продажи
+						</Text>
+						<LineChart
+							data={chartData}
+							width={screenWidth - 40}
+							height={chartHeight}
+							chartConfig={{
+								backgroundColor: '#282828',
+								backgroundGradientFrom: '#282828',
+								backgroundGradientTo: '#282828',
+								decimalPlaces: 0,
+								color: () => '#BF3335',
+								labelColor: () => '#FFFAFA',
+								formatYLabel: value => {
+									const num = Math.round(Number(value))
+									if (num >= 1000) {
+										return (num / 1000).toFixed(0)
+									}
+									return `${num.toString() + 'руб'}`
+								},
+								style: {
+									borderRadius: 8
+								},
+								propsForDots: {
+									r: '5',
+									strokeWidth: '2',
+									stroke: '#BF3335'
+								},
+								propsForBackgroundLines: {
+									strokeDasharray: '0'
+								}
+							}}
+							style={{
+								borderRadius: 8,
+								marginLeft: -20
+							}}
+							bezier
+						/>
+					</View>
+
+					{/* Фильтры графика */}
+					<View>
+						<Text className='text-gray-500 text-xs font-semibold mb-2'>
+							ПЕРИОД
+						</Text>
+						<View className='flex-row gap-2'>
+							{filterButtons.map(btn => (
+								<Pressable
+									key={btn.value}
+									onPress={() => setFilterPeriod(btn.value)}
+									className={`flex-1 py-2 px-3 rounded-lg ${
+										filterPeriod === btn.value
+											? 'bg-primary'
+											: 'bg-gray-default'
+									}`}
+								>
+									<Text className='text-white text-center font-semibold text-xs'>
+										{btn.label}
+									</Text>
+								</Pressable>
+							))}
+						</View>
+					</View>
+
+					{/* Статистика продаж */}
+					<View className='flex-row gap-3'>
+						<View className='flex-1 bg-gray-default rounded-lg p-4'>
+							<View className='flex-row items-center mb-2'>
+								<Feather name='shopping-cart' size={20} color='#BF3335' />
+								<Text className='text-white text-sm font-semibold ml-2'>
+									Кол-во
 								</Text>
-							</Pressable>
-						))}
-					</View>
-				</View>
-
-				{/* График продаж */}
-				<View className='bg-gray-default rounded-lg p-4 overflow-hidden'>
-					<Text className='text-white text-lg font-semibold mb-4'>Продажи</Text>
-					<LineChart
-						data={chartData}
-						width={screenWidth - 40}
-						height={220}
-						chartConfig={{
-							backgroundColor: '#282828',
-							backgroundGradientFrom: '#282828',
-							backgroundGradientTo: '#282828',
-							decimalPlaces: 0,
-							color: () => '#BF3335',
-							labelColor: () => '#FFFAFA',
-							style: {
-								borderRadius: 8
-							},
-							propsForDots: {
-								r: '5',
-								strokeWidth: '2',
-								stroke: '#BF3335'
-							},
-							propsForBackgroundLines: {
-								strokeDasharray: '0'
-							}
-						}}
-						style={{
-							borderRadius: 8,
-							marginLeft: -20
-						}}
-						bezier
-					/>
-				</View>
-
-				{/* Статистика продаж */}
-				<View className='flex-row gap-3'>
-					<View className='flex-1 bg-gray-default rounded-lg p-4'>
-						<View className='flex-row items-center mb-2'>
-							<Feather name='shopping-cart' size={20} color='#BF3335' />
-							<Text className='text-white text-sm font-semibold ml-2'>
-								Кол-во
+							</View>
+							<Text className='text-3xl font-bold text-primary'>
+								{stats.totalQuantity}
 							</Text>
 						</View>
-						<Text className='text-3xl font-bold text-primary'>
-							{stats.totalQuantity}
-						</Text>
-					</View>
 
-					<View className='flex-1 bg-gray-default rounded-lg p-4'>
-						<View className='flex-row items-center mb-2'>
-							<Feather name='dollar-sign' size={20} color='#BF3335' />
-							<Text className='text-white text-sm font-semibold ml-2'>
-								Сумма
+						<View className='flex-1 bg-gray-default rounded-lg p-4'>
+							<View className='flex-row items-center mb-2'>
+								<Text className='text-white text-sm font-semibold ml-2'>
+									Сумма (руб.)
+								</Text>
+							</View>
+							<Text className='text-3xl font-bold text-primary'>
+								{stats.totalAmount.toFixed(0)}
 							</Text>
 						</View>
-						<Text className='text-3xl font-bold text-primary'>
-							{stats.totalAmount.toFixed(0)}
-						</Text>
 					</View>
-				</View>
 
-				{/* Статистика */}
-				<View className='bg-gray-default rounded-lg p-4'>
-					<View className='flex-row items-center mb-2'>
-						<Feather name='users' size={24} color='#BF3335' />
-						<Text className='text-white text-lg font-semibold ml-3'>
-							Всего клиентов
+					{/* Статистика */}
+					<View className='bg-gray-default rounded-lg p-4'>
+						<View className='flex-row items-center mb-2'>
+							<Feather name='users' size={24} color='#BF3335' />
+							<Text className='text-white text-lg font-semibold ml-3'>
+								Всего клиентов
+							</Text>
+						</View>
+						<Text className='text-4xl font-bold text-primary'>
+							{clients.length}
 						</Text>
 					</View>
-					<Text className='text-4xl font-bold text-primary'>
-						{clients.length}
-					</Text>
-				</View>
 
-				<View className='bg-gray-default rounded-lg p-4'>
-					<View className='flex-row items-center mb-2'>
-						<Feather name='log-in' size={24} color='#BF3335' />
-						<Text className='text-white text-lg font-semibold ml-3'>
-							Аккаунт
-						</Text>
+					<View className='bg-gray-default rounded-lg p-4'>
+						<View className='flex-row items-center mb-2'>
+							<Feather name='log-in' size={24} color='#BF3335' />
+							<Text className='text-white text-lg font-semibold ml-3'>
+								Аккаунт
+							</Text>
+						</View>
+						<Text className='text-gray-500 text-sm'>{user?.email}</Text>
 					</View>
-					<Text className='text-gray-500 text-sm'>{user?.email}</Text>
-				</View>
 
-				<View className='bg-gray-default rounded-lg p-4'>
-					<View className='flex-row items-center mb-2'>
-						<Feather name='activity' size={24} color='#BF3335' />
-						<Text className='text-white text-lg font-semibold ml-3'>
-							Жизненный цикл
-						</Text>
+					<View className='bg-gray-default rounded-lg p-4'>
+						<View className='flex-row items-center mb-2'>
+							<Feather name='activity' size={24} color='#BF3335' />
+							<Text className='text-white text-lg font-semibold ml-3'>
+								Жизненный цикл
+							</Text>
+						</View>
+						<Text className='text-green-500 text-sm'>Статус: Активно</Text>
 					</View>
-					<Text className='text-green-500 text-sm'>Статус: Активно</Text>
-				</View>
 				</View>
 			</ScrollView>
 
@@ -194,9 +211,11 @@ const MonitoringScreen: FC<Props> = () => {
 							onPress={() => setSelectProductModalVisible(false)}
 						/>
 
-						<View className='bg-gray-default rounded-t-2xl p-6 pb-8 max-h-3/4'>
+						<View className='bg-black border-1 border-gray-400 rounded-t-2xl p-6 pb-8 max-h-3/4'>
 							<View className='flex-row items-center justify-between mb-6'>
-								<Text className='text-white text-xl font-bold'>Новая продажа</Text>
+								<Text className='text-white text-xl font-bold'>
+									Новая продажа
+								</Text>
 								<Pressable onPress={() => setSelectProductModalVisible(false)}>
 									<Feather name='x' size={24} color='white' />
 								</Pressable>
@@ -231,19 +250,6 @@ const MonitoringScreen: FC<Props> = () => {
 						</View>
 					</View>
 				</Modal>
-			)}
-
-			{/* Modal for adding sale */}
-			{selectedProduct && (
-				<QuickSaleModal
-					product={selectedProduct}
-					isVisible={salesModalVisible}
-					onClose={() => {
-						setSalesModalVisible(false)
-						setSelectedProduct(null)
-					}}
-					onSaleAdded={handleSaleAdded}
-				/>
 			)}
 		</View>
 	)

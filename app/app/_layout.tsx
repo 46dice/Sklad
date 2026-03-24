@@ -6,8 +6,8 @@ import { Colors } from '@/shared/constants/Colors'
 import { Stack, useRouter } from 'expo-router'
 import { Platform, Text } from 'react-native'
 import {
-    SafeAreaProvider,
-    useSafeAreaInsets
+	SafeAreaProvider,
+	useSafeAreaInsets
 } from 'react-native-safe-area-context'
 
 export default function AppLayout() {
@@ -109,6 +109,41 @@ export default function AppLayout() {
 								}}
 								onPress={() => {
 									submitProductForm(newProductFormState)
+									router.back()
+								}}
+							>
+								Готово
+							</Text>
+						)
+					}}
+				/>
+				<Stack.Screen
+					name='(QuickSale)/modal'
+					options={{
+						headerTitle: 'Продать товар',
+						presentation: 'modal',
+						headerShown: true,
+						headerStyle: {
+							backgroundColor: Colors.black
+						},
+						headerTitleStyle: {
+							color: Colors.white
+						},
+						contentStyle: {
+							backgroundColor: Colors.black,
+							paddingTop: 0
+						},
+						headerRight: () => (
+							<Text
+								style={{
+									color: Platform.select({
+										ios: '#007AFF',
+										android: '#2196F3'
+									}),
+									fontSize: 17,
+									fontWeight: '600'
+								}}
+								onPress={() => {
 									router.back()
 								}}
 							>

@@ -110,7 +110,7 @@ export const useSales = () => {
 				const hourSales = filteredSales.filter(sale => {
 					return sale.timestamp >= startOfHour && sale.timestamp < hour.timestamp
 				})
-				return hourSales.reduce((sum, sale) => sum + sale.quantity, 0)
+				return hourSales.reduce((sum, sale) => sum + sale.totalAmount, 0)
 			})
 
 			return {
@@ -134,7 +134,7 @@ export const useSales = () => {
 				const daySales = filteredSales.filter(
 					sale => sale.timestamp >= day.date.getTime() && sale.timestamp < endOfDay.getTime()
 				)
-				return daySales.reduce((sum, sale) => sum + sale.quantity, 0)
+				return daySales.reduce((sum, sale) => sum + sale.totalAmount, 0)
 			})
 
 			return {
@@ -158,7 +158,7 @@ export const useSales = () => {
 				const weekSales = filteredSales.filter(
 					sale => sale.timestamp >= week.startTime && sale.timestamp < week.endTime
 				)
-				return weekSales.reduce((sum, sale) => sum + sale.quantity, 0)
+				return weekSales.reduce((sum, sale) => sum + sale.totalAmount, 0)
 			})
 
 			return {
