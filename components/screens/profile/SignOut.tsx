@@ -1,6 +1,8 @@
 import { useAuth } from '@/hooks/useAuth'
-import { Pressable, Text, View } from 'react-native'
+import { Colors } from '@/shared/constants/Colors'
+import { MaterialIcons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
+import { Pressable, Text, View } from 'react-native'
 
 export default function SignOut() {
 	const { authFirebase } = useAuth()
@@ -16,10 +18,17 @@ export default function SignOut() {
 	}
 
 	return (
-		<View>
-			<Pressable onPress={onSignOut}>
-				<Text className='color-primary'>Выйти</Text>
-			</Pressable>
-		</View>
+		<Pressable
+			onPress={onSignOut}
+			className='rounded-xl overflow-hidden active:opacity-80'
+			style={{ backgroundColor: Colors.primary }}
+		>
+			<View className='flex-row items-center justify-center px-6 py-4'>
+				<MaterialIcons name='logout' size={20} color={Colors.white} />
+				<Text className='text-base font-semibold text-white ml-3'>
+					Выйти из аккаунта
+				</Text>
+			</View>
+		</Pressable>
 	)
 }
