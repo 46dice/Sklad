@@ -6,8 +6,8 @@ import { Colors } from '@/shared/constants/Colors'
 import { Stack, useRouter } from 'expo-router'
 import { Platform, Text } from 'react-native'
 import {
-	SafeAreaProvider,
-	useSafeAreaInsets
+    SafeAreaProvider,
+    useSafeAreaInsets
 } from 'react-native-safe-area-context'
 
 export default function AppLayout() {
@@ -29,6 +29,7 @@ export default function AppLayout() {
 				}}
 			>
 				<Stack.Screen name='(tabs)' />
+				<Stack.Screen name='(Contracts)' />
 				<Stack.Screen name='agent/[id]'
 					options={{
 						headerTitle: 'Редактирование',
