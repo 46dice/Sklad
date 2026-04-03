@@ -1,8 +1,82 @@
-import { IContract } from '@/shared/types/contracts.types'
+import { IContract, IContractItem } from '@/shared/types/contracts.types'
+import { ISale } from '@/shared/types/sales.types'
 import * as Print from 'expo-print'
 import * as Sharing from 'expo-sharing'
 
-export const generateContractHTML = (contract: IContract): string => {
+const generateSalesTableHTML = (items: ISale[] | IContractItem[] = []): string => {
+	if (items.length === 0) return ''
+
+	// Деtermine if we have ISale or IContractItem
+	const isSaleItems = items.length > 0 && 'productId' in items[0]
+
+	const rows = items
+		.map(item => {
+			if (isSaleItems && 'productId' in item) {
+				// IContractItem
+				return `<tr>
+                <td style="padding: 8px; border: 1px solid #ddd;">${item.productName}</td>
+                <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${item.quantity}</td>
+                <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${item.price}₽</td>
+                <td style="padding: 8px; border: 1px solid #ddd; text-align: right;"><strong>${item.totalAmount}₽</strong></td>
+              </tr>`
+			} else {
+				// ISale - handle both new and old structure
+				const sale = item as ISale
+				if (sale.items && sale.items.length > 0) {
+					return sale.items
+						.map(
+							saleItem =>
+								`<tr>
+                <td style="padding: 8px; border: 1px solid #ddd;">${saleItem.productName}</td>
+                <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${saleItem.quantity}</td>
+                <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${saleItem.price}₽</td>
+                <td style="padding: 8px; border: 1px solid #ddd; text-align: right;"><strong>${saleItem.totalAmount}₽</strong></td>
+              </tr>`
+						)
+						.join('')
+				} else if (sale.productName) {
+					return `<tr>
+                <td style="padding: 8px; border: 1px solid #ddd;">${sale.productName}</td>
+                <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${sale.quantity}</td>
+                <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${sale.price}₽</td>
+                <td style="padding: 8px; border: 1px solid #ddd; text-align: right;"><strong>${sale.totalAmount}₽</strong></td>
+              </tr>`
+				}
+			}
+			return ''
+		})
+		.join('')
+
+	if (!rows) return ''
+
+	const totalAmount = items.reduce((sum, item) => {
+		if ('totalAmount' in item) {
+			return sum + item.totalAmount
+		}
+		return sum
+	}, 0)
+
+	return `
+    <div class="section">
+      <div class="section-title">13. ТОВАРЫ</div>
+      <table class="sales-table">
+        <tr style="background-color: #f5f5f5;">
+          <th style="padding: 8px; border: 1px solid #ddd; text-align: left;"><strong>Название товара</strong></th>
+          <th style="padding: 8px; border: 1px solid #ddd; text-align: center;"><strong>Кол-во</strong></th>
+          <th style="padding: 8px; border: 1px solid #ddd; text-align: right;"><strong>Цена</strong></th>
+          <th style="padding: 8px; border: 1px solid #ddd; text-align: right;"><strong>Сумма</strong></th>
+        </tr>
+        ${rows}
+        <tr style="background-color: #f0f0f0; font-weight: bold;">
+          <td colspan="3" style="padding: 8px; border: 1px solid #ddd; text-align: right;">ИТОГО:</td>
+          <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${totalAmount.toFixed(0)}₽</td>
+        </tr>
+      </table>
+    </div>
+  `
+}
+
+export const generateContractHTML = (contract: IContract, items: ISale[] | IContractItem[] = []): string => {
 	const currentDate = new Date().toLocaleDateString('ru-RU')
 
 	return `
@@ -59,6 +133,12 @@ export const generateContractHTML = (contract: IContract): string => {
         .info-table td {
           padding: 8px;
           border: 1px solid #ddd;
+        }
+        .sales-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-top: 10px;
+          font-size: 11px;
         }
         .label {
           font-weight: bold;
@@ -202,6 +282,8 @@ export const generateContractHTML = (contract: IContract): string => {
 12.2 Изменения договора действительны только если произведены в письменной форме и подписаны обеими Сторонами.</div>
         </div>
 
+        ${generateSalesTableHTML(items || contract.items)}
+
         <!-- Signature Block -->
         <div class="signature-block">
           <div class="signature-line">
@@ -226,10 +308,13 @@ export const generateContractHTML = (contract: IContract): string => {
 }
 
 export const exportContractToPDF = async (
-	contract: IContract
+	contract: IContract,
+	sales: ISale[] = []
 ): Promise<boolean> => {
 	try {
-		const html = generateContractHTML(contract)
+		// Используем товары из контракта если они есть, иначе используем продажи
+		const items = contract.items && contract.items.length > 0 ? contract.items : sales
+		const html = generateContractHTML(contract, items)
 
 		const { uri } = await Print.printToFileAsync({
 			html: html,

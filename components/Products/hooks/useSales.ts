@@ -171,7 +171,13 @@ export const useSales = () => {
 	// Получить статистику за выбранный период
 	const getPeriodStats = useCallback(() => {
 		const filteredSales = getFilteredSales()
-		const totalQuantity = filteredSales.reduce((sum, sale) => sum + sale.quantity, 0)
+		// Учитываем как items массив (новая структура) так и старую структуру с quantity
+		const totalQuantity = filteredSales.reduce((sum, sale) => {
+			if (sale.items && Array.isArray(sale.items)) {
+				return sum + sale.items.reduce((itemSum, item) => itemSum + item.quantity, 0)
+			}
+			return sum + (sale.quantity || 0)
+		}, 0)
 		const totalAmount = filteredSales.reduce((sum, sale) => sum + sale.totalAmount, 0)
 
 		return {

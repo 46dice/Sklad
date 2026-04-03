@@ -13,6 +13,7 @@ export const ContractStats: FC<Props> = ({ showViewDetailsButton = true }) => {
 	const router = useRouter()
 
 	const activeContracts = contracts.filter(c => c.status === 'active')
+	const draftContracts = contracts.filter(c => c.status === 'draft')
 	const expiringSoon = contracts.filter(c => {
 		const now = new Date()
 		const validUntil = new Date(c.terms.validUntil)
@@ -21,9 +22,6 @@ export const ContractStats: FC<Props> = ({ showViewDetailsButton = true }) => {
 		)
 		return daysLeft > 0 && daysLeft <= 30
 	})
-
-	const draftCount = contracts.filter(c => c.status === 'draft').length
-	const signedCount = contracts.filter(c => c.status === 'signed').length
 
 	return (
 		<View className='gap-3'>
@@ -59,24 +57,12 @@ export const ContractStats: FC<Props> = ({ showViewDetailsButton = true }) => {
 				<View className='flex-1 bg-gray-default rounded-lg p-4'>
 					<View className='flex-row items-center justify-between'>
 						<View>
-							<Text className='text-gray-400 text-sm'>На подпись</Text>
-							<Text className='text-white text-2xl font-bold mt-1'>
-								{signedCount}
-							</Text>
-						</View>
-						<Feather name='edit' size={32} color='#3B82F6' />
-					</View>
-				</View>
-
-				<View className='flex-1 bg-gray-default rounded-lg p-4'>
-					<View className='flex-row items-center justify-between'>
-						<View>
 							<Text className='text-gray-400 text-sm'>Черновики</Text>
 							<Text className='text-white text-2xl font-bold mt-1'>
-								{draftCount}
+								{draftContracts.length}
 							</Text>
 						</View>
-						<Feather name='file' size={32} color='#666666' />
+						<Feather name='file' size={32} color='#F59E0B' />
 					</View>
 				</View>
 			</View>

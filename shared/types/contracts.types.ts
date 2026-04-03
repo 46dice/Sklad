@@ -1,5 +1,13 @@
 export type ContractStatus = 'draft' | 'active'
 
+export interface IContractItem {
+	productId: string
+	productName: string
+	quantity: number
+	price: number
+	totalAmount: number
+}
+
 export interface IContractTerms {
 	paymentTerms: string // "Оплата в течение 30 дней"
 	deliveryTerms: string // "Доставка в течение 5 рабочих дней"
@@ -21,6 +29,7 @@ export interface IContract {
 	terms: IContractTerms
 	description?: string
 	attachments?: string[] // URLs
+	items?: IContractItem[] // Товары в контракте
 }
 
 export interface INewContractForm {
@@ -34,6 +43,7 @@ export interface INewContractForm {
 	validFrom: string
 	validUntil: string
 	currency: 'RUB' | 'USD' | 'EUR'
+	items?: IContractItem[] // Товары в контракте
 }
 
 export interface IContractFilter {

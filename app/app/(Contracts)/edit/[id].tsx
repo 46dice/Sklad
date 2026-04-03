@@ -1,10 +1,11 @@
 import { ContractForm } from '@/components/Contracts/ContractForm'
 import useContractStore from '@/components/Contracts/contract.model'
+import { useProducts } from '@/components/Products/hooks/useProducts'
 import { useClients } from '@/hooks/useClients'
 import { useDocuments } from '@/hooks/useDocuments'
 import { INewContractForm } from '@/shared/types/contracts.types'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { FC, useState } from 'react'
+import { FC, useMemo, useState } from 'react'
 import { ActivityIndicator, Text, View } from 'react-native'
 
 const EditContractModal: FC = () => {
@@ -12,10 +13,17 @@ const EditContractModal: FC = () => {
 	const router = useRouter()
 	const { getContract, updateContract } = useContractStore()
 	const { clients, isLoading: clientsLoading } = useClients()
-	const { updateDocument } = useDocuments()
+	const { products, isLoading: productsLoading } = useProducts()
+	const { updateDocument, contracts } = useDocuments()
 	const [isProcessing, setIsProcessing] = useState(false)
 
-	const contract = getContract(id as string)
+	// Пытаемся получить контракт из store или из Firebase
+	const contract = useMemo(() => {
+		const fromStore = getContract(id as string)
+		if (fromStore) return fromStore
+		// Если не в store, ищем в Firebase документах
+		return contracts.find(c => c.id === id)
+	}, [id, getContract, contracts])
 
 	const clientsForSelect = clients.map(client => ({
 		id: client.id,
@@ -40,7 +48,8 @@ const EditContractModal: FC = () => {
 		price: contract.terms.price,
 		validFrom: contract.terms.validFrom,
 		validUntil: contract.terms.validUntil,
-		currency: contract.terms.currency
+		currency: contract.terms.currency,
+		items: contract.items || []
 	}
 
 	const handleUpdateContract = async (formData: INewContractForm) => {
@@ -59,7 +68,8 @@ const EditContractModal: FC = () => {
 					validFrom: formData.validFrom,
 					validUntil: formData.validUntil,
 					currency: formData.currency
-				}
+				},
+				items: formData.items || []
 			})
 
 			if (success) {
@@ -76,7 +86,8 @@ const EditContractModal: FC = () => {
 						validFrom: formData.validFrom,
 						validUntil: formData.validUntil,
 						currency: formData.currency
-					}
+					},
+					items: formData.items || []
 				})
 				router.back()
 			}
@@ -87,12 +98,12 @@ const EditContractModal: FC = () => {
 		}
 	}
 
-	if (clientsLoading || isProcessing) {
+	if (clientsLoading || productsLoading || isProcessing) {
 		return (
 			<View className='flex-1 bg-black items-center justify-center'>
 				<ActivityIndicator size='large' color='#3B82F6' />
 				<Text className='text-white mt-4'>
-					{isProcessing ? 'Сохранение договора...' : 'Загрузка клиентов...'}
+					{isProcessing ? 'Сохранение договора...' : 'Загрузка данных...'}
 				</Text>
 			</View>
 		)
@@ -104,6 +115,7 @@ const EditContractModal: FC = () => {
 				initialData={initialFormData}
 				onSubmit={handleUpdateContract}
 				clients={clientsForSelect}
+				products={products}
 			/>
 		</View>
 	)

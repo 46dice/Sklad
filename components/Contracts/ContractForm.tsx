@@ -1,4 +1,5 @@
-import { INewContractForm } from '@/shared/types/contracts.types'
+import { IContractItem, INewContractForm } from '@/shared/types/contracts.types'
+import { INewProductForm } from '@/shared/types/products.types'
 import { Feather } from '@expo/vector-icons'
 import { FC, useState } from 'react'
 import { KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native'
@@ -6,10 +7,18 @@ import { KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableO
 type Props = {
 	initialData?: INewContractForm
 	onSubmit: (data: INewContractForm) => void
-	clients: Array<{ id: string; name: string }>
+	clients: { id: string; name: string }[]
+	products: (INewProductForm & { id: string })[]
 }
 
-export const ContractForm: FC<Props> = ({ initialData, onSubmit, clients }) => {
+interface SelectedProduct {
+	id: string
+	name: string
+	price: number
+	quantity: number
+}
+
+export const ContractForm: FC<Props> = ({ initialData, onSubmit, clients, products }) => {
 	const [formData, setFormData] = useState<INewContractForm>(
 		initialData || {
 			clientId: '',
@@ -23,11 +32,21 @@ export const ContractForm: FC<Props> = ({ initialData, onSubmit, clients }) => {
 			validUntil: new Date(new Date().setFullYear(new Date().getFullYear() + 1))
 				.toISOString()
 				.split('T')[0],
-			currency: 'RUB'
+			currency: 'RUB',
+			items: []
 		}
 	)
 
 	const [showClientDropdown, setShowClientDropdown] = useState(false)
+	const [showProductDropdown, setShowProductDropdown] = useState(false)
+	const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>(
+		initialData?.items?.map(item => ({
+			id: item.productId,
+			name: item.productName,
+			price: item.price,
+			quantity: item.quantity
+		})) || []
+	)
 
 	const handleChange = (key: keyof INewContractForm, value: any) => {
 		setFormData(prev => ({
@@ -42,13 +61,67 @@ export const ContractForm: FC<Props> = ({ initialData, onSubmit, clients }) => {
 		setShowClientDropdown(false)
 	}
 
+	const handleProductQuantityChange = (productId: string, quantity: number) => {
+		if (quantity <= 0) {
+			// Удаляем товар
+			setSelectedProducts(prev => prev.filter(p => p.id !== productId))
+		} else {
+			// Обновляем или добавляем товар
+			const existing = selectedProducts.find(p => p.id === productId)
+			if (existing) {
+				setSelectedProducts(prev =>
+					prev.map(p => (p.id === productId ? { ...p, quantity } : p))
+				)
+			} else {
+				const product = products.find(p => p.id === productId)
+				if (product) {
+					setSelectedProducts(prev => [
+						...prev,
+						{
+							id: productId,
+							name: product.name,
+							price: product.price,
+							quantity
+						}
+					])
+				}
+			}
+		}
+	}
+
+	const handleRemoveProduct = (productId: string) => {
+		setSelectedProducts(prev => prev.filter(p => p.id !== productId))
+	}
+
 	const handleSubmit = () => {
-		if (!formData.clientId || !formData.contractNumber || !formData.price) {
+		if (!formData.clientId || !formData.contractNumber) {
 			alert('Заполните обязательные поля')
 			return
 		}
-		onSubmit(formData)
+
+		// Создаём items из выбранных товаров
+		const items: IContractItem[] = selectedProducts.map(p => ({
+			productId: p.id,
+			productName: p.name,
+			price: p.price,
+			quantity: p.quantity,
+			totalAmount: p.price * p.quantity
+		}))
+
+		// Пересчитываем общую сумму если есть товары
+		let totalPrice = formData.price
+		if (items.length > 0) {
+			totalPrice = items.reduce((sum, item) => sum + item.totalAmount, 0)
+		}
+
+		onSubmit({
+			...formData,
+			price: totalPrice,
+			items
+		})
 	}
+
+	const totalProductsPrice = selectedProducts.reduce((sum, p) => sum + p.quantity * p.price, 0)
 
 	return (
 		<KeyboardAvoidingView
@@ -110,6 +183,88 @@ export const ContractForm: FC<Props> = ({ initialData, onSubmit, clients }) => {
 					)}
 				</View>
 
+				{/* Products Selection */}
+				<View className='mb-4'>
+					<Text className='text-gray-300 text-sm font-medium mb-2'>
+						Товары
+					</Text>
+					<TouchableOpacity
+						onPress={() => setShowProductDropdown(!showProductDropdown)}
+						className='bg-gray-default p-3 rounded-lg flex-row items-center justify-between'
+					>
+						<Text className='text-base text-gray-500'>
+							{selectedProducts.length === 0
+								? 'Добавить товары'
+								: `Товаров: ${selectedProducts.length}`}
+						</Text>
+						<Feather
+							name={showProductDropdown ? 'chevron-up' : 'chevron-down'}
+							size={20}
+							color='#666'
+						/>
+					</TouchableOpacity>
+
+					{showProductDropdown && (
+						<View className='bg-gray-default mt-1 rounded-lg overflow-hidden max-h-64'>
+							{products.map(product => (
+								<View key={product.id} className='flex-row items-center gap-2 p-3 border-b border-gray-600'>
+									<View className='flex-1'>
+										<Text className='text-white font-medium text-sm'>{product.name}</Text>
+										<Text className='text-gray-400 text-xs'>{product.price}₽/шт</Text>
+									</View>
+									<TouchableOpacity
+										onPress={() => handleProductQuantityChange(product.id, (selectedProducts.find(p => p.id === product.id)?.quantity || 0) - 1)}
+										className='bg-gray-600 w-6 h-6 rounded items-center justify-center'
+									>
+										<Text className='text-white text-sm'>−</Text>
+									</TouchableOpacity>
+									<Text className='text-white font-semibold w-6 text-center text-sm'>
+										{selectedProducts.find(p => p.id === product.id)?.quantity || 0}
+									</Text>
+									<TouchableOpacity
+										onPress={() => handleProductQuantityChange(product.id, (selectedProducts.find(p => p.id === product.id)?.quantity || 0) + 1)}
+										className='bg-primary w-6 h-6 rounded items-center justify-center'
+									>
+										<Text className='text-white text-sm'>+</Text>
+									</TouchableOpacity>
+								</View>
+							))}
+						</View>
+					)}
+				</View>
+
+				{/* Selected Products Table */}
+				{selectedProducts.length > 0 && (
+					<View className='mb-4 bg-gray-default rounded-lg p-4'>
+						<Text className='text-white font-semibold mb-3'>Выбранные товары</Text>
+						<View className='flex-row pb-2 mb-2 border-b border-gray-600'>
+							<Text className='flex-1 text-gray-400 text-xs font-semibold'>Товар</Text>
+							<Text className='w-10 text-gray-400 text-xs font-semibold text-center'>Кол-во</Text>
+							<Text className='w-14 text-gray-400 text-xs font-semibold text-right'>Цена</Text>
+							<Text className='w-16 text-gray-400 text-xs font-semibold text-right'>Сумма</Text>
+							<Text className='w-8'></Text>
+						</View>
+						{selectedProducts.map(product => (
+							<View key={product.id} className='flex-row items-center pb-2 mb-2 border-b border-gray-700 last:border-b-0 last:mb-0 last:pb-0'>
+								<Text className='flex-1 text-white text-xs'>{product.name}</Text>
+								<Text className='w-10 text-white text-xs text-center'>{product.quantity}</Text>
+								<Text className='w-14 text-white text-xs text-right'>{product.price}₽</Text>
+								<Text className='w-16 text-primary text-xs text-right font-semibold'>{(product.quantity * product.price).toFixed(0)}₽</Text>
+								<TouchableOpacity
+									onPress={() => handleRemoveProduct(product.id)}
+									className='w-8 items-center'
+								>
+									<Feather name='x' size={14} color='#EF4444' />
+								</TouchableOpacity>
+							</View>
+						))}
+						<View className='mt-3 pt-3 border-t border-gray-600 flex-row justify-between'>
+							<Text className='text-white font-semibold'>Итого товаров:</Text>
+							<Text className='text-primary font-bold'>{totalProductsPrice.toFixed(0)}₽</Text>
+						</View>
+					</View>
+				)}
+
 				{/* Description */}
 				<View className='mb-4'>
 					<Text className='text-gray-300 text-sm font-medium mb-2'>
@@ -129,7 +284,7 @@ export const ContractForm: FC<Props> = ({ initialData, onSubmit, clients }) => {
 				{/* Price */}
 				<View className='mb-4'>
 					<Text className='text-gray-300 text-sm font-medium mb-2'>
-						Сумма договора *
+						Сумма договора {selectedProducts.length > 0 ? '(из товаров)' : ''}
 					</Text>
 					<View className='flex-row gap-2'>
 						<TextInput
@@ -137,8 +292,9 @@ export const ContractForm: FC<Props> = ({ initialData, onSubmit, clients }) => {
 							placeholder='0'
 							placeholderTextColor='#666'
 							keyboardType='decimal-pad'
-							value={formData.price.toString()}
-							onChangeText={val => handleChange('price', parseFloat(val) || 0)}
+							editable={selectedProducts.length === 0}
+							value={selectedProducts.length > 0 ? totalProductsPrice.toFixed(0) : formData.price.toString()}
+							onChangeText={val => selectedProducts.length === 0 && handleChange('price', parseFloat(val) || 0)}
 						/>
 						<View className='bg-gray-default p-3 rounded-lg justify-center'>
 							<Text className='text-white font-semibold'>{formData.currency}</Text>

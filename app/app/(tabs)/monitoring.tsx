@@ -3,8 +3,9 @@ import { useProducts } from '@/components/Products/hooks/useProducts'
 import { useSales } from '@/components/Products/hooks/useSales'
 import { useAuth } from '@/hooks/useAuth'
 import { Feather } from '@expo/vector-icons'
+import { useFocusEffect } from '@react-navigation/native'
 import { useRouter } from 'expo-router'
-import { FC, useState } from 'react'
+import { FC, useCallback, useState } from 'react'
 import {
 	Dimensions,
 	Modal,
@@ -15,13 +16,13 @@ import {
 } from 'react-native'
 import { LineChart } from 'react-native-chart-kit'
 
-type Props = {}
+type Props = Record<string, never>
 
 const MonitoringScreen: FC<Props> = () => {
 	const router = useRouter()
 	const { user } = useAuth()
 	const { clients } = useClients()
-	const { products, refreshProducts } = useProducts()
+	const { products } = useProducts()
 	const {
 		getSalesChartData,
 		getPeriodStats,
@@ -32,6 +33,13 @@ const MonitoringScreen: FC<Props> = () => {
 
 	const [selectProductModalVisible, setSelectProductModalVisible] =
 		useState(false)
+
+	// Обновляем мониторинг при возврате на вкладку
+	useFocusEffect(
+		useCallback(() => {
+			fetchSales()
+		}, [fetchSales])
+	)
 
 	const chartData = getSalesChartData()
 	const stats = getPeriodStats()

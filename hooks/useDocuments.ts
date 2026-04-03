@@ -55,7 +55,8 @@ export const useDocuments = () => {
 						currency: formData.currency
 					},
 					description: formData.description,
-					attachments: []
+					attachments: [],
+					items: formData.items || []
 				}
 
 				const docRef = await addDoc(documentsCollection, newContractData)

@@ -1,5 +1,6 @@
 import { ContractForm } from '@/components/Contracts/ContractForm'
 import useContractStore from '@/components/Contracts/contract.model'
+import { useProducts } from '@/components/Products/hooks/useProducts'
 import { useClients } from '@/hooks/useClients'
 import { useDocuments } from '@/hooks/useDocuments'
 import { INewContractForm } from '@/shared/types/contracts.types'
@@ -11,6 +12,7 @@ const NewContractModal: FC = () => {
 	const router = useRouter()
 	const { addContract } = useContractStore()
 	const { clients, isLoading: clientsLoading } = useClients()
+	const { products, isLoading: productsLoading } = useProducts()
 	const { saveDocument } = useDocuments()
 	const [isProcessing, setIsProcessing] = useState(false)
 
@@ -37,12 +39,12 @@ const NewContractModal: FC = () => {
 		}
 	}
 
-	if (clientsLoading || isProcessing) {
+	if (clientsLoading || productsLoading || isProcessing) {
 		return (
 			<View className='flex-1 bg-black items-center justify-center'>
 				<ActivityIndicator size='large' color='#3B82F6' />
 				<Text className='text-white mt-4'>
-					{isProcessing ? 'Сохранение договора...' : 'Загрузка клиентов...'}
+					{isProcessing ? 'Сохранение договора...' : 'Загрузка данных...'}
 				</Text>
 			</View>
 		)
@@ -53,6 +55,7 @@ const NewContractModal: FC = () => {
 			<ContractForm
 				onSubmit={handleCreateContract}
 				clients={clientsForSelect}
+				products={products}
 			/>
 		</View>
 	)
