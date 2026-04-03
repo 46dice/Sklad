@@ -5,14 +5,14 @@ import { showToast } from '@/shared/ui/showToast'
 import { collection, getDocs, orderBy, query } from 'firebase/firestore/lite'
 import { useCallback, useEffect, useState } from 'react'
 
-type FilterPeriod = 'today' | 'week' | 'month'
+type FilterPeriod = 'today' | 'week' | 'month' | 'year'
 
 export const useSales = () => {
 	const { user } = useAuth()
 	const [sales, setSales] = useState<ISale[]>([])
 	const [isLoading, setIsLoading] = useState(false)
 	const [filterPeriod, setFilterPeriod] = useState<FilterPeriod>('today')
-	const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
+	const currentYear = new Date().getFullYear()
 
 	const fetchSales = useCallback(async () => {
 		if (!user) return
@@ -42,6 +42,19 @@ export const useSales = () => {
 
 	// Получить отфильтрованные продажи по периоду
 	const getFilteredSales = useCallback(() => {
+		// Сначала фильтруем по текущему году
+		const startOfYear = new Date(currentYear, 0, 1).getTime()
+		const endOfYear = new Date(currentYear + 1, 0, 1).getTime()
+		const salesByYear = sales.filter(
+			sale => sale.timestamp >= startOfYear && sale.timestamp < endOfYear
+		)
+
+		// Если выбран фильтр 'year', возвращаем все продажи за год
+		if (filterPeriod === 'year') {
+			return salesByYear
+		}
+
+		// Для остальных периодов применяем дополнительный фильтр
 		let startTime = 0
 
 		switch (filterPeriod) {
@@ -67,28 +80,8 @@ export const useSales = () => {
 			}
 		}
 
-		return sales.filter(sale => sale.timestamp >= startTime)
-	}, [sales, filterPeriod])
-
-	// Получить продажи за конкретный год
-	const getSalesByYear = useCallback(() => {
-		const startOfYear = new Date(selectedYear, 0, 1).getTime()
-		const endOfYear = new Date(selectedYear + 1, 0, 1).getTime()
-
-		return sales.filter(
-			sale => sale.timestamp >= startOfYear && sale.timestamp < endOfYear
-		)
-	}, [sales, selectedYear])
-
-	// Получить все года из продаж
-	const getAvailableYears = useCallback(() => {
-		const years = new Set<number>()
-		sales.forEach(sale => {
-			const year = new Date(sale.timestamp).getFullYear()
-			years.add(year)
-		})
-		return Array.from(years).sort((a, b) => b - a)
-	}, [sales])
+		return salesByYear.filter(sale => sale.timestamp >= startTime)
+	}, [sales, filterPeriod, currentYear])
 
 	// Получить данные для графика по часам
 	const getSalesChartData = useCallback(() => {
@@ -141,7 +134,7 @@ export const useSales = () => {
 				labels: days.map(d => d.label),
 				datasets: [{ data: salesByDay }]
 			}
-		} else {
+		} else if (filterPeriod === 'month') {
 			// График по неделям за месяц
 			const weeks: { label: string; startTime: number; endTime: number }[] = []
 			for (let i = 3; i >= 0; i--) {
@@ -165,8 +158,34 @@ export const useSales = () => {
 				labels: weeks.map(w => w.label),
 				datasets: [{ data: salesByWeek }]
 			}
+		} else {
+			// График по месяцам за год
+			const months: { label: string; startTime: number; endTime: number }[] = []
+			
+			for (let i = 0; i < 12; i++) {
+				const monthStart = new Date(currentYear, i, 1)
+				const monthEnd = new Date(currentYear, i + 1, 1)
+				const label = monthStart.toLocaleDateString('ru-RU', { month: 'short' })
+				months.push({
+					label: label.substring(0, 2).toUpperCase(),
+					startTime: monthStart.getTime(),
+					endTime: monthEnd.getTime()
+				})
+			}
+
+			const salesByMonth = months.map(month => {
+				const monthSales = filteredSales.filter(
+					sale => sale.timestamp >= month.startTime && sale.timestamp < month.endTime
+				)
+				return monthSales.reduce((sum, sale) => sum + sale.totalAmount, 0)
+			})
+
+			return {
+				labels: months.map(m => m.label),
+				datasets: [{ data: salesByMonth }]
+			}
 		}
-	}, [filterPeriod, getFilteredSales])
+	}, [filterPeriod, getFilteredSales, currentYear])
 
 	// Получить статистику за выбранный период
 	const getPeriodStats = useCallback(() => {
@@ -192,13 +211,9 @@ export const useSales = () => {
 		isLoading,
 		filterPeriod,
 		setFilterPeriod,
-		selectedYear,
-		setSelectedYear,
 		getSalesChartData,
 		getPeriodStats,
 		getFilteredSales,
-		getSalesByYear,
-		getAvailableYears,
 		fetchSales
 	}
 }

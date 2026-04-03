@@ -50,7 +50,8 @@ const MonitoringScreen: FC<Props> = () => {
 	const filterButtons = [
 		{ label: 'Сегодня', value: 'today' as const },
 		{ label: 'Неделя', value: 'week' as const },
-		{ label: 'Месяц', value: 'month' as const }
+		{ label: 'Месяц', value: 'month' as const },
+		{ label: 'Год', value: 'year' as const }
 	]
 
 	const handleSelectProduct = (product: any) => {
@@ -125,7 +126,7 @@ const MonitoringScreen: FC<Props> = () => {
 						<Text className='text-gray-500 text-xs font-semibold mb-2'>
 							ПЕРИОД
 						</Text>
-						<View className='flex-row gap-2'>
+						<View className='flex-row gap-2 mb-3'>
 							{filterButtons.map(btn => (
 								<Pressable
 									key={btn.value}
@@ -259,7 +260,8 @@ const MonitoringScreen: FC<Props> = () => {
 					</View>
 				</Modal>
 			)}
-		</View>
+
+</View>
 	)
 }
 
