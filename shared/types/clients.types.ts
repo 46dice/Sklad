@@ -10,4 +10,5 @@ export interface INewClientForm {
 	inn: string
 	ogrn: string
 	okpo: string
+	bankAccountNumber?: string // Расчетный счет
 }

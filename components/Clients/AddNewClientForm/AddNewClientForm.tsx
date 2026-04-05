@@ -6,10 +6,10 @@ import { FormInput } from '@/shared/ui/FormInput'
 import { isEqual } from 'lodash'
 import { useEffect } from 'react'
 import { Controller, useForm } from 'react-hook-form'
-import { Pressable, Switch, Text, View } from 'react-native'
+import { Switch, Text, View } from 'react-native'
 import useClientStore, { initialFormState } from '../client.model'
-import { useNewClient } from '../hooks/useNewClient'
 import { useClients } from '../hooks/useClients'
+import { useNewClient } from '../hooks/useNewClient'
 
 export default function AddNewClientForm() {
 	const { newClientFormState, updateFormState, setSubmitFunction, resetForm } =
@@ -167,11 +167,13 @@ export default function AddNewClientForm() {
 
 			<View className='gap-1 mb-2'>
 				<Text className='uppercase text-sm text-white'>Расчетный счет</Text>
-				<Pressable className='bg-[#232323] w-full border rounded-lg pb-4 pt-2.5 px-4'>
-					<Text className='text-white text-center'>
-						+ Добавить расчетный счет
-					</Text>
-				</Pressable>
+				<FormInput<INewClientForm>
+					name='bankAccountNumber'
+					control={control}
+					placeholder='Расчетный счет (20 цифр)'
+					keyboardType='numeric'
+					onChangeText={text => onFormChange({ bankAccountNumber: text })}
+				/>
 			</View>
 
 			<View className='flex-row items-center justify-between mb-2'>

@@ -70,10 +70,9 @@ export default function Auth() {
 					/>
 					<FormInput<IAuthFormData>
 						placeholder='Password'
-						name='password'
-						keyboardType='visible-password'
 						control={control}
-						boxClassname='mb-2'
+						name='password'
+						secureTextEntry={true}
 						rules={{
 							required: 'Пароль обязателен!',
 							minLength: {

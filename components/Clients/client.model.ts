@@ -11,7 +11,8 @@ export const initialFormState: INewClientForm = {
 	legalAddress: '',
 	inn: '',
 	ogrn: '',
-	okpo: ''
+	okpo: '',
+	bankAccountNumber: ''
 }
 
 type State = {
