@@ -51,7 +51,7 @@ export default function Auth() {
 
 	return (
 		<DismissKeyboard>
-			<View className='items-center justify-center h-full'>
+			<View className='items-center justify-center h-full bg-black'>
 				<View className='items-center w-9/12'>
 					<Text className='color-white text-5xl mb-3 font-bold'>{text}</Text>
 					<FormInput<IAuthFormData>

@@ -2,7 +2,15 @@ import { IContractItem, INewContractForm } from '@/shared/types/contracts.types'
 import { INewProductForm } from '@/shared/types/products.types'
 import { Feather } from '@expo/vector-icons'
 import { FC, useState } from 'react'
-import { KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import {
+	KeyboardAvoidingView,
+	Platform,
+	ScrollView,
+	Text,
+	TextInput,
+	TouchableOpacity,
+	View
+} from 'react-native'
 
 type Props = {
 	initialData?: INewContractForm
@@ -18,7 +26,12 @@ interface SelectedProduct {
 	quantity: number
 }
 
-export const ContractForm: FC<Props> = ({ initialData, onSubmit, clients, products }) => {
+export const ContractForm: FC<Props> = ({
+	initialData,
+	onSubmit,
+	clients,
+	products
+}) => {
 	const [formData, setFormData] = useState<INewContractForm>(
 		initialData || {
 			clientId: '',
@@ -121,14 +134,20 @@ export const ContractForm: FC<Props> = ({ initialData, onSubmit, clients, produc
 		})
 	}
 
-	const totalProductsPrice = selectedProducts.reduce((sum, p) => sum + p.quantity * p.price, 0)
+	const totalProductsPrice = selectedProducts.reduce(
+		(sum, p) => sum + p.quantity * p.price,
+		0
+	)
 
 	return (
 		<KeyboardAvoidingView
 			behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
 			className='flex-1'
 		>
-			<ScrollView className='flex-1 bg-black' contentContainerStyle={{ padding: 16 }}>
+			<ScrollView
+				className='flex-1 bg-black'
+				contentContainerStyle={{ padding: 16 }}
+			>
 				<Text className='text-white text-2xl font-bold mb-4'>
 					{initialData ? 'Редактировать договор' : 'Новый договор'}
 				</Text>
@@ -185,9 +204,7 @@ export const ContractForm: FC<Props> = ({ initialData, onSubmit, clients, produc
 
 				{/* Products Selection */}
 				<View className='mb-4'>
-					<Text className='text-gray-300 text-sm font-medium mb-2'>
-						Товары
-					</Text>
+					<Text className='text-gray-300 text-sm font-medium mb-2'>Товары</Text>
 					<TouchableOpacity
 						onPress={() => setShowProductDropdown(!showProductDropdown)}
 						className='bg-gray-default p-3 rounded-lg flex-row items-center justify-between'
@@ -206,29 +223,51 @@ export const ContractForm: FC<Props> = ({ initialData, onSubmit, clients, produc
 
 					{showProductDropdown && (
 						<View className='bg-gray-default mt-1 rounded-lg overflow-hidden max-h-64'>
-							{products.map(product => (
-								<View key={product.id} className='flex-row items-center gap-2 p-3 border-b border-gray-600'>
-									<View className='flex-1'>
-										<Text className='text-white font-medium text-sm'>{product.name}</Text>
-										<Text className='text-gray-400 text-xs'>{product.price}₽/шт</Text>
+							<ScrollView nestedScrollEnabled>
+								{products.map(product => (
+									<View
+										key={product.id}
+										className='flex-row items-center gap-2 p-3 border-b border-gray-600'
+									>
+										<View className='flex-1'>
+											<Text className='text-white font-medium text-sm'>
+												{product.name}
+											</Text>
+											<Text className='text-gray-400 text-xs'>
+												{product.price}₽/шт
+											</Text>
+										</View>
+										<TouchableOpacity
+											onPress={() =>
+												handleProductQuantityChange(
+													product.id,
+													(selectedProducts.find(p => p.id === product.id)
+														?.quantity || 0) - 1
+												)
+											}
+											className='bg-gray-600 w-6 h-6 rounded items-center justify-center'
+										>
+											<Text className='text-white text-sm'>−</Text>
+										</TouchableOpacity>
+										<Text className='text-white font-semibold w-6 text-center text-sm'>
+											{selectedProducts.find(p => p.id === product.id)
+												?.quantity || 0}
+										</Text>
+										<TouchableOpacity
+											onPress={() =>
+												handleProductQuantityChange(
+													product.id,
+													(selectedProducts.find(p => p.id === product.id)
+														?.quantity || 0) + 1
+												)
+											}
+											className='bg-primary w-6 h-6 rounded items-center justify-center'
+										>
+											<Text className='text-white text-sm'>+</Text>
+										</TouchableOpacity>
 									</View>
-									<TouchableOpacity
-										onPress={() => handleProductQuantityChange(product.id, (selectedProducts.find(p => p.id === product.id)?.quantity || 0) - 1)}
-										className='bg-gray-600 w-6 h-6 rounded items-center justify-center'
-									>
-										<Text className='text-white text-sm'>−</Text>
-									</TouchableOpacity>
-									<Text className='text-white font-semibold w-6 text-center text-sm'>
-										{selectedProducts.find(p => p.id === product.id)?.quantity || 0}
-									</Text>
-									<TouchableOpacity
-										onPress={() => handleProductQuantityChange(product.id, (selectedProducts.find(p => p.id === product.id)?.quantity || 0) + 1)}
-										className='bg-primary w-6 h-6 rounded items-center justify-center'
-									>
-										<Text className='text-white text-sm'>+</Text>
-									</TouchableOpacity>
-								</View>
-							))}
+								))}
+							</ScrollView>
 						</View>
 					)}
 				</View>
@@ -236,20 +275,41 @@ export const ContractForm: FC<Props> = ({ initialData, onSubmit, clients, produc
 				{/* Selected Products Table */}
 				{selectedProducts.length > 0 && (
 					<View className='mb-4 bg-gray-default rounded-lg p-4'>
-						<Text className='text-white font-semibold mb-3'>Выбранные товары</Text>
+						<Text className='text-white font-semibold mb-3'>
+							Выбранные товары
+						</Text>
 						<View className='flex-row pb-2 mb-2 border-b border-gray-600'>
-							<Text className='flex-1 text-gray-400 text-xs font-semibold'>Товар</Text>
-							<Text className='w-10 text-gray-400 text-xs font-semibold text-center'>Кол-во</Text>
-							<Text className='w-14 text-gray-400 text-xs font-semibold text-right'>Цена</Text>
-							<Text className='w-16 text-gray-400 text-xs font-semibold text-right'>Сумма</Text>
+							<Text className='flex-1 text-gray-400 text-xs font-semibold'>
+								Товар
+							</Text>
+							<Text className='w-10 text-gray-400 text-xs font-semibold text-center'>
+								Кол-во
+							</Text>
+							<Text className='w-14 text-gray-400 text-xs font-semibold text-right'>
+								Цена
+							</Text>
+							<Text className='w-16 text-gray-400 text-xs font-semibold text-right'>
+								Сумма
+							</Text>
 							<Text className='w-8'></Text>
 						</View>
 						{selectedProducts.map(product => (
-							<View key={product.id} className='flex-row items-center pb-2 mb-2 border-b border-gray-700 last:border-b-0 last:mb-0 last:pb-0'>
-								<Text className='flex-1 text-white text-xs'>{product.name}</Text>
-								<Text className='w-10 text-white text-xs text-center'>{product.quantity}</Text>
-								<Text className='w-14 text-white text-xs text-right'>{product.price}₽</Text>
-								<Text className='w-16 text-primary text-xs text-right font-semibold'>{(product.quantity * product.price).toFixed(0)}₽</Text>
+							<View
+								key={product.id}
+								className='flex-row items-center pb-2 mb-2 border-b border-gray-700 last:border-b-0 last:mb-0 last:pb-0'
+							>
+								<Text className='flex-1 text-white text-xs'>
+									{product.name}
+								</Text>
+								<Text className='w-10 text-white text-xs text-center'>
+									{product.quantity}
+								</Text>
+								<Text className='w-14 text-white text-xs text-right'>
+									{product.price}₽
+								</Text>
+								<Text className='w-16 text-primary text-xs text-right font-semibold'>
+									{(product.quantity * product.price).toFixed(0)}₽
+								</Text>
 								<TouchableOpacity
 									onPress={() => handleRemoveProduct(product.id)}
 									className='w-8 items-center'
@@ -260,7 +320,9 @@ export const ContractForm: FC<Props> = ({ initialData, onSubmit, clients, produc
 						))}
 						<View className='mt-3 pt-3 border-t border-gray-600 flex-row justify-between'>
 							<Text className='text-white font-semibold'>Итого товаров:</Text>
-							<Text className='text-primary font-bold'>{totalProductsPrice.toFixed(0)}₽</Text>
+							<Text className='text-primary font-bold'>
+								{totalProductsPrice.toFixed(0)}₽
+							</Text>
 						</View>
 					</View>
 				)}
@@ -293,11 +355,20 @@ export const ContractForm: FC<Props> = ({ initialData, onSubmit, clients, produc
 							placeholderTextColor='#666'
 							keyboardType='decimal-pad'
 							editable={selectedProducts.length === 0}
-							value={selectedProducts.length > 0 ? totalProductsPrice.toFixed(0) : formData.price.toString()}
-							onChangeText={val => selectedProducts.length === 0 && handleChange('price', parseFloat(val) || 0)}
+							value={
+								selectedProducts.length > 0
+									? totalProductsPrice.toFixed(0)
+									: formData.price.toString()
+							}
+							onChangeText={val =>
+								selectedProducts.length === 0 &&
+								handleChange('price', parseFloat(val) || 0)
+							}
 						/>
 						<View className='bg-gray-default p-3 rounded-lg justify-center'>
-							<Text className='text-white font-semibold'>{formData.currency}</Text>
+							<Text className='text-white font-semibold'>
+								{formData.currency}
+							</Text>
 						</View>
 					</View>
 				</View>

@@ -6,16 +6,20 @@ import { Colors } from '@/shared/constants/Colors'
 import { Stack, useRouter } from 'expo-router'
 import { Platform, Text } from 'react-native'
 import {
-    SafeAreaProvider,
-    useSafeAreaInsets
+	SafeAreaProvider,
+	useSafeAreaInsets
 } from 'react-native-safe-area-context'
 
 export default function AppLayout() {
 	const { top } = useSafeAreaInsets()
 	const router = useRouter()
 	const { submitForm, newClientFormState } = useClientStore()
-	const { submitForm: submitProductForm, newProductFormState, editingProductId } = useProductStore()
-	
+	const {
+		submitForm: submitProductForm,
+		newProductFormState,
+		editingProductId
+	} = useProductStore()
+
 	return (
 		<SafeAreaProvider>
 			<StatusBar style='light' />
@@ -28,12 +32,15 @@ export default function AppLayout() {
 					}
 				}}
 			>
-				<Stack.Screen name='(tabs)' />
+				{/* <Stack.Screen name='(tabs)' /> */}
 				<Stack.Screen name='(Contracts)' />
-				<Stack.Screen name='agent/[id]'
+				<Stack.Screen
+					name='agent/[id]'
 					options={{
 						headerTitle: 'Редактирование',
 						headerShown: true,
+						presentation: 'modal',
+
 						headerStyle: {
 							backgroundColor: Colors.black
 						},
@@ -85,7 +92,9 @@ export default function AppLayout() {
 				<Stack.Screen
 					name='(NewProduct)/modal'
 					options={{
-						headerTitle: editingProductId ? 'Редактировать товар' : 'Добавить товар',
+						headerTitle: editingProductId
+							? 'Редактировать товар'
+							: 'Добавить товар',
 						presentation: 'modal',
 						headerShown: true,
 						headerStyle: {
