@@ -1,14 +1,11 @@
 import { useClients } from '@/components/Clients/hooks/useClients'
-import { useProducts } from '@/components/Products/hooks/useProducts'
-import { useSales } from '@/components/Products/hooks/useSales'
 import { useAuth } from '@/hooks/useAuth'
+import { useShipments } from '@/hooks/useShipments'
 import { Feather } from '@expo/vector-icons'
 import { useFocusEffect } from '@react-navigation/native'
-import { useRouter } from 'expo-router'
-import { FC, useCallback, useState } from 'react'
+import { FC, useCallback, useMemo, useState } from 'react'
 import {
 	Dimensions,
-	Modal,
 	Pressable,
 	ScrollView,
 	Text,
@@ -18,31 +15,133 @@ import { LineChart } from 'react-native-chart-kit'
 
 type Props = Record<string, never>
 
+type FilterPeriod = 'today' | 'week' | 'month' | 'year'
+
 const MonitoringScreen: FC<Props> = () => {
-	const router = useRouter()
 	const { user } = useAuth()
 	const { clients } = useClients()
-	const { products } = useProducts()
-	const {
-		getSalesChartData,
-		getPeriodStats,
-		filterPeriod,
-		setFilterPeriod,
-		fetchSales
-	} = useSales()
-
-	const [selectProductModalVisible, setSelectProductModalVisible] =
-		useState(false)
+	const { shipments, fetchShipments } = useShipments()
+	const [filterPeriod, setFilterPeriod] = useState<FilterPeriod>('month')
 
 	// Обновляем мониторинг при возврате на вкладку
 	useFocusEffect(
 		useCallback(() => {
-			fetchSales()
-		}, [fetchSales])
+			fetchShipments()
+		}, [fetchShipments])
 	)
 
-	const chartData = getSalesChartData()
-	const stats = getPeriodStats()
+	// Фильтруем акты по периоду
+	const getFilteredShipments = useCallback(() => {
+		const now = new Date()
+		const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+
+		return shipments.filter(shipment => {
+			const shipmentDate = new Date(shipment.createdAt)
+			const shipmentDay = new Date(shipmentDate.getFullYear(), shipmentDate.getMonth(), shipmentDate.getDate())
+
+			switch (filterPeriod) {
+				case 'today':
+					return shipmentDay.getTime() === today.getTime()
+				case 'week':
+					const weekAgo = new Date(today)
+					weekAgo.setDate(weekAgo.getDate() - 7)
+					return shipmentDay >= weekAgo && shipmentDay <= today
+				case 'month':
+					return shipmentDate.getMonth() === now.getMonth() && shipmentDate.getFullYear() === now.getFullYear()
+				case 'year':
+					return shipmentDate.getFullYear() === now.getFullYear()
+				default:
+					return true
+			}
+		})
+	}, [shipments, filterPeriod])
+
+	const filteredShipments = getFilteredShipments()
+
+	// Получаем статистику
+	const stats = useMemo(() => {
+		const totalAmount = filteredShipments.reduce((sum, shipment) => sum + shipment.totalAmount, 0)
+		const totalQuantity = filteredShipments.reduce((sum, shipment) => 
+			sum + shipment.items.reduce((itemSum, item) => itemSum + item.quantity, 0), 0
+		)
+		const totalShipments = filteredShipments.length
+
+		return {
+			totalAmount,
+			totalQuantity,
+			totalShipments
+		}
+	}, [filteredShipments])
+
+	// Получаем данные для графика
+	const getChartData = useCallback(() => {
+		const now = new Date()
+		const labels: string[] = []
+		const data: number[] = []
+
+		if (filterPeriod === 'today') {
+			// По часам
+			for (let i = 0; i < 24; i++) {
+				labels.push(`${i}:00`)
+				const hourShipments = filteredShipments.filter(s => {
+					const date = new Date(s.createdAt)
+					return date.getHours() === i
+				})
+				const amount = hourShipments.reduce((sum, s) => sum + s.totalAmount, 0)
+				data.push(amount)
+			}
+		} else if (filterPeriod === 'week') {
+			// По дням недели
+			const daysOfWeek = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
+			for (let i = 0; i < 7; i++) {
+				const date = new Date(now)
+				date.setDate(date.getDate() - (6 - i))
+				labels.push(daysOfWeek[date.getDay()])
+				const dayShipments = filteredShipments.filter(s => {
+					const sDate = new Date(s.createdAt)
+					return sDate.toDateString() === date.toDateString()
+				})
+				const amount = dayShipments.reduce((sum, s) => sum + s.totalAmount, 0)
+				data.push(amount)
+			}
+		} else if (filterPeriod === 'month') {
+			// По дням месяца
+			const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+			for (let i = 1; i <= Math.min(daysInMonth, 30); i++) {
+				labels.push(i.toString())
+				const date = new Date(now.getFullYear(), now.getMonth(), i)
+				const dayShipments = filteredShipments.filter(s => {
+					const sDate = new Date(s.createdAt)
+					return sDate.toDateString() === date.toDateString()
+				})
+				const amount = dayShipments.reduce((sum, s) => sum + s.totalAmount, 0)
+				data.push(amount)
+			}
+		} else {
+			// По месяцам
+			const monthNames = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек']
+			for (let i = 0; i < 12; i++) {
+				labels.push(monthNames[i])
+				const monthShipments = filteredShipments.filter(s => {
+					const sDate = new Date(s.createdAt)
+					return sDate.getMonth() === i && sDate.getFullYear() === now.getFullYear()
+				})
+				const amount = monthShipments.reduce((sum, s) => sum + s.totalAmount, 0)
+				data.push(amount)
+			}
+		}
+
+		return {
+			labels,
+			datasets: [
+				{
+					data: data.length > 0 ? data : [0]
+				}
+			]
+		}
+	}, [filteredShipments, filterPeriod])
+
+	const chartData = getChartData()
 	const screenWidth = Dimensions.get('window').width
 	const screenHeight = Dimensions.get('window').height
 	const chartHeight = Math.floor(screenHeight * 0.5)
@@ -54,34 +153,20 @@ const MonitoringScreen: FC<Props> = () => {
 		{ label: 'Год', value: 'year' as const }
 	]
 
-	const handleSelectProduct = (product: any) => {
-		setSelectProductModalVisible(false)
-		router.push({
-			pathname: '/app/(QuickSale)/modal',
-			params: { product: JSON.stringify(product) }
-		})
-	}
-
 	return (
 		<View className='flex-1'>
-			{/* Header with button */}
+			{/* Header */}
 			<View className='flex-row items-center justify-between px-4 pt-4 pb-2'>
 				<Text className='text-white text-2xl font-bold'>Мониторинг</Text>
-				<Pressable
-					onPress={() => setSelectProductModalVisible(true)}
-					className='bg-primary rounded-lg p-3'
-				>
-					<Feather name='plus' size={24} color='white' />
-				</Pressable>
 			</View>
 
 			{/* Scrollable content */}
 			<ScrollView className='flex-1' contentContainerStyle={{ padding: 16 }}>
 				<View className='gap-4'>
-					{/* График продаж */}
+					{/* График выручки */}
 					<View className='bg-gray-default rounded-lg p-4 overflow-hidden'>
 						<Text className='text-white text-lg font-semibold mb-4'>
-							Продажи
+							Выручка из актов
 						</Text>
 						<LineChart
 							data={chartData}
@@ -145,13 +230,25 @@ const MonitoringScreen: FC<Props> = () => {
 						</View>
 					</View>
 
-					{/* Статистика продаж */}
+					{/* Статистика */}
 					<View className='flex-row gap-3'>
+						<View className='flex-1 bg-gray-default rounded-lg p-4'>
+							<View className='flex-row items-center mb-2'>
+								<Feather name='file-text' size={20} color='#BF3335' />
+								<Text className='text-white text-sm font-semibold ml-2'>
+									Актов
+								</Text>
+							</View>
+							<Text className='text-3xl font-bold text-primary'>
+								{stats.totalShipments}
+							</Text>
+						</View>
+
 						<View className='flex-1 bg-gray-default rounded-lg p-4'>
 							<View className='flex-row items-center mb-2'>
 								<Feather name='shopping-cart' size={20} color='#BF3335' />
 								<Text className='text-white text-sm font-semibold ml-2'>
-									Кол-во
+									Услуг
 								</Text>
 							</View>
 							<Text className='text-3xl font-bold text-primary'>
@@ -162,7 +259,7 @@ const MonitoringScreen: FC<Props> = () => {
 						<View className='flex-1 bg-gray-default rounded-lg p-4'>
 							<View className='flex-row items-center mb-2'>
 								<Text className='text-white text-sm font-semibold ml-2'>
-									Сумма (руб.)
+									Выручка (руб.)
 								</Text>
 							</View>
 							<Text className='text-3xl font-bold text-primary'>
@@ -176,7 +273,7 @@ const MonitoringScreen: FC<Props> = () => {
 						<View className='flex-row items-center mb-2'>
 							<Feather name='users' size={24} color='#BF3335' />
 							<Text className='text-white text-lg font-semibold ml-3'>
-								Всего клиентов
+								Всего контрагентов
 							</Text>
 						</View>
 						<Text className='text-4xl font-bold text-primary'>
@@ -205,63 +302,7 @@ const MonitoringScreen: FC<Props> = () => {
 					</View>
 				</View>
 			</ScrollView>
-
-			{/* Modal for selecting product */}
-			{products.length > 0 && (
-				<Modal
-					visible={selectProductModalVisible}
-					transparent={true}
-					animationType='slide'
-					onRequestClose={() => setSelectProductModalVisible(false)}
-				>
-					<View className='flex-1 justify-end'>
-						<Pressable
-							className='flex-1 bg-black/50'
-							onPress={() => setSelectProductModalVisible(false)}
-						/>
-
-						<View className='bg-black border-1 border-gray-400 rounded-t-2xl p-6 pb-8 max-h-3/4'>
-							<View className='flex-row items-center justify-between mb-6'>
-								<Text className='text-white text-xl font-bold'>
-									Новая продажа
-								</Text>
-								<Pressable onPress={() => setSelectProductModalVisible(false)}>
-									<Feather name='x' size={24} color='white' />
-								</Pressable>
-							</View>
-
-							<ScrollView showsVerticalScrollIndicator={false}>
-								<Text className='text-gray-500 text-sm font-semibold mb-3'>
-									Выберите товар для продажи
-								</Text>
-								<View className='gap-2'>
-									{products.map(product => (
-										<Pressable
-											key={product.id}
-											onPress={() => handleSelectProduct(product)}
-											className='bg-gray-500 rounded-lg p-4 flex-row items-center justify-between'
-										>
-											<View className='flex-1'>
-												<Text className='text-white font-semibold'>
-													{product.name}
-												</Text>
-												<Text className='text-gray-500 text-xs mt-1'>
-													SKU: {product.sku} • В наличии: {product.quantity}
-												</Text>
-											</View>
-											<Text className='text-primary font-bold ml-3'>
-												{product.price} ₽
-											</Text>
-										</Pressable>
-									))}
-								</View>
-							</ScrollView>
-						</View>
-					</View>
-				</Modal>
-			)}
-
-</View>
+		</View>
 	)
 }
 

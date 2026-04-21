@@ -79,6 +79,13 @@ export default function AppLayout() {
 				}}
 			/>
 			<Tabs.Screen
+				name='deliveries'
+				options={{
+					title: 'Доставки',
+					...getLabelOptions('truck')
+				}}
+			/>
+			<Tabs.Screen
 				name='agents'
 				options={{
 					title: 'Клиенты',

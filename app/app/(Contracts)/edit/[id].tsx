@@ -1,98 +1,73 @@
-import { ContractForm } from '@/components/Contracts/ContractForm'
-import useContractStore from '@/components/Contracts/contract.model'
+import { useClients } from '@/components/Clients/hooks/useClients'
+import { ShipmentForm } from '@/components/Contracts/ShipmentForm'
 import { useProducts } from '@/components/Products/hooks/useProducts'
-import { useClients } from '@/hooks/useClients'
-import { useDocuments } from '@/hooks/useDocuments'
-import { INewContractForm } from '@/shared/types/contracts.types'
+import { useShipments } from '@/hooks/useShipments'
+import { INewShipmentForm } from '@/shared/types/shipment.types'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { FC, useMemo, useState } from 'react'
 import { ActivityIndicator, Text, View } from 'react-native'
 
-const EditContractModal: FC = () => {
+const EditShipmentModal: FC = () => {
 	const { id } = useLocalSearchParams()
 	const router = useRouter()
-	const { getContract, updateContract } = useContractStore()
 	const { clients, isLoading: clientsLoading } = useClients()
 	const { products, isLoading: productsLoading } = useProducts()
-	const { updateDocument, contracts } = useDocuments()
+	const { shipments, updateShipment } = useShipments()
 	const [isProcessing, setIsProcessing] = useState(false)
 
-	// Пытаемся получить контракт из store или из Firebase
-	const contract = useMemo(() => {
-		const fromStore = getContract(id as string)
-		if (fromStore) return fromStore
-		// Если не в store, ищем в Firebase документах
-		return contracts.find(c => c.id === id)
-	}, [id, getContract, contracts])
+	const shipment = useMemo(() => {
+		return shipments.find(s => s.id === id)
+	}, [id, shipments])
 
 	const clientsForSelect = clients.map(client => ({
 		id: client.id,
-		name: client.name
+		name: client.name,
+		inn: client.inn || '',
+		address: client.actualAddress || client.legalAddress || ''
 	}))
 
-	if (!contract) {
+	// Преобразуем товары в услуги
+	const servicesFromProducts = products.map(product => ({
+		id: product.id || '',
+		name: product.name,
+		price: product.price
+	}))
+
+	if (!shipment) {
 		return (
 			<View className='flex-1 bg-black items-center justify-center'>
-				<Text className='text-gray-400'>Договор не найден</Text>
+				<Text className='text-gray-400'>Акт не найден</Text>
 			</View>
 		)
 	}
 
-	const initialFormData: INewContractForm = {
-		clientId: contract.clientId,
-		clientName: contract.clientName,
-		contractNumber: contract.contractNumber,
-		description: contract.description,
-		paymentTerms: contract.terms.paymentTerms,
-		deliveryTerms: contract.terms.deliveryTerms,
-		price: contract.terms.price,
-		validFrom: contract.terms.validFrom,
-		validUntil: contract.terms.validUntil,
-		currency: contract.terms.currency,
-		items: contract.items || []
+	const initialFormData: INewShipmentForm = {
+		clientId: shipment.clientId,
+		clientName: shipment.clientName,
+		clientInn: shipment.clientInn,
+		clientAddress: shipment.clientAddress,
+		items: shipment.items,
+		notes: shipment.notes
 	}
 
-	const handleUpdateContract = async (formData: INewContractForm) => {
+	const handleUpdateShipment = async (formData: INewShipmentForm) => {
 		setIsProcessing(true)
 		try {
-			// Обновляем в Firebase
-			const success = await updateDocument(contract.id, {
-				contractNumber: formData.contractNumber,
+			const success = await updateShipment(shipment.id, {
 				clientId: formData.clientId,
 				clientName: formData.clientName,
-				description: formData.description,
-				terms: {
-					paymentTerms: formData.paymentTerms,
-					deliveryTerms: formData.deliveryTerms,
-					price: formData.price,
-					validFrom: formData.validFrom,
-					validUntil: formData.validUntil,
-					currency: formData.currency
-				},
-				items: formData.items || []
+				clientInn: formData.clientInn,
+				clientAddress: formData.clientAddress,
+				items: formData.items,
+				totalAmount: formData.items.reduce((sum, item) => sum + item.totalAmount, 0),
+				notes: formData.notes
 			})
 
 			if (success) {
-				// Обновляем локальный store
-				updateContract(contract.id, {
-					contractNumber: formData.contractNumber,
-					clientId: formData.clientId,
-					clientName: formData.clientName,
-					description: formData.description,
-					terms: {
-						paymentTerms: formData.paymentTerms,
-						deliveryTerms: formData.deliveryTerms,
-						price: formData.price,
-						validFrom: formData.validFrom,
-						validUntil: formData.validUntil,
-						currency: formData.currency
-					},
-					items: formData.items || []
-				})
 				router.back()
 			}
 		} catch (error) {
-			console.error('Ошибка при обновлении договора:', error)
+			console.error('Ошибка при обновлении акта:', error)
 		} finally {
 			setIsProcessing(false)
 		}
@@ -103,7 +78,7 @@ const EditContractModal: FC = () => {
 			<View className='flex-1 bg-black items-center justify-center'>
 				<ActivityIndicator size='large' color='#3B82F6' />
 				<Text className='text-white mt-4'>
-					{isProcessing ? 'Сохранение договора...' : 'Загрузка данных...'}
+					{isProcessing ? 'Сохранение акта...' : 'Загрузка данных...'}
 				</Text>
 			</View>
 		)
@@ -111,14 +86,14 @@ const EditContractModal: FC = () => {
 
 	return (
 		<View className='flex-1 bg-black'>
-			<ContractForm
+			<ShipmentForm
 				initialData={initialFormData}
-				onSubmit={handleUpdateContract}
+				onSubmit={handleUpdateShipment}
 				clients={clientsForSelect}
-				products={products}
+				services={servicesFromProducts}
 			/>
 		</View>
 	)
 }
 
-export default EditContractModal
+export default EditShipmentModal

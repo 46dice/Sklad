@@ -75,6 +75,13 @@ export default function ProductList({
 					)}
 					<View className='flex-row gap-2'>
 						<Pressable
+							onPress={() => item.id && router.push(`/app/product/${item.id}`)}
+							className='bg-blue-600 rounded-lg py-2 px-3 flex-row items-center justify-center gap-1'
+						>
+							<Feather name='eye' size={14} color='white' />
+							<Text className='text-white font-semibold text-xs'>Подробнее</Text>
+						</Pressable>
+						{/* <Pressable
 							onPress={() =>
 								item.id && handleQuickSale({ ...item, id: item.id })
 							}
@@ -82,7 +89,7 @@ export default function ProductList({
 						>
 							<Feather name='check-circle' size={16} color='white' />
 							<Text className='text-white font-semibold'>Продать</Text>
-						</Pressable>
+						</Pressable> */}
 						<Pressable
 							onPress={() =>
 								item.id && handleEditPress({ ...item, id: item.id })

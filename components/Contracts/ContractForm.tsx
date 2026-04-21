@@ -149,7 +149,7 @@ export const ContractForm: FC<Props> = ({
 				contentContainerStyle={{ padding: 16 }}
 			>
 				<Text className='text-white text-2xl font-bold mb-4'>
-					{initialData ? 'Редактировать договор' : 'Новый договор'}
+					{initialData ? 'Редактировать акт' : 'Новый акт'}
 				</Text>
 
 				{/* Contract Number */}

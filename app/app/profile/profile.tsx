@@ -1,5 +1,3 @@
-'use strict'
-
 import SignOut from '@/components/screens/profile/SignOut'
 import { useAuth } from '@/hooks/useAuth'
 import { useUserProfile } from '@/hooks/useUserProfile'
@@ -15,8 +13,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native'
 
 export default function Profile() {
 	const { user, userProfile, isLoading: authLoading } = useAuth()
-	const { updateUserProfile, searchByInn, innData, isLoadingInn } =
-		useUserProfile()
+	const { updateUserProfile } = useUserProfile()
 	const [isEditing, setIsEditing] = useState(false)
 	const [hasChanges, setHasChanges] = useState(false)
 	const [initialData, setInitialData] = useState<IUserProfile | null>(null)
@@ -26,11 +23,19 @@ export default function Profile() {
 		mode: 'onChange',
 		defaultValues: {
 			email: '',
-			uid: '',
-			firstName: '',
-			lastName: '',
-			inn: '',
-			displayName: ''
+			role: 'manager',
+			name: '',
+			phone: '',
+			permissions: [],
+			isActive: true,
+			createdAt: new Date(),
+			supplierFullName: '',
+			supplierInn: '',
+			supplierAddress: '',
+			supplierBankName: '',
+			supplierBik: '',
+			supplierAccountNumber: '',
+			supplierCorrespondentAccount: ''
 		}
 	})
 
@@ -56,12 +61,6 @@ export default function Profile() {
 
 		try {
 			setIsSaving(true)
-
-			const inn = watchedFields.inn
-			if (inn && inn.length >= 10) {
-				await handleSearchInn(inn)
-			}
-
 			const success = await updateUserProfile(user.uid, watchedFields)
 
 			if (success) {
@@ -71,21 +70,6 @@ export default function Profile() {
 			}
 		} finally {
 			setIsSaving(false)
-		}
-	}
-
-	const handleSearchInn = async (inn: string) => {
-		if (!inn || inn.length < 10) return
-
-		const data = await searchByInn(inn)
-
-		if (data?.suggestions?.[0]) {
-			const company = data.suggestions[0].data
-
-			setValue('firstName', company.name.first_name || '')
-			setValue('lastName', company.name.last_name || '')
-			setValue('displayName', company.name.full || '')
-			setValue('inn', company.inn || '')
 		}
 	}
 
@@ -124,12 +108,25 @@ export default function Profile() {
 				</View>
 
 				<Text className='text-2xl font-bold text-white mb-2'>
-					{watchedFields?.displayName ||
-						watchedFields?.firstName ||
+					{watchedFields?.name ||
 						'Пользователь'}
 				</Text>
 
-				<Text className='text-base text-gray-400'>{user?.email}</Text>
+				<Text className='text-base text-gray-400 mb-2'>{user?.email}</Text>
+				
+				{/* Отображение роли */}
+				{userProfile?.role && (
+					<View className='flex-row items-center gap-2 mt-2 px-4 py-2 rounded-full bg-primary/20'>
+						<MaterialIcons 
+							name={userProfile.role === 'manager' ? 'business-center' : 'local-shipping'} 
+							size={16} 
+							color={Colors.primary} 
+						/>
+						<Text className='text-primary font-semibold'>
+							{userProfile.role === 'manager' ? 'Менеджер' : 'Курьер'}
+						</Text>
+					</View>
+				)}
 			</View>
 
 			{/* Инфо секция */}
@@ -154,7 +151,7 @@ export default function Profile() {
 				{/* Email поле (не редактируется) */}
 				<View
 					className='rounded-2xl p-6 border-2 mb-4'
-					style={{ borderColor: Colors.border || '#333333' }}
+					style={{ borderColor: '#333333' }}
 				>
 					<View className='flex-row items-center '>
 						<MaterialIcons name='email' size={20} color={Colors.primary} />
@@ -170,7 +167,7 @@ export default function Profile() {
 				{/* ID пользователя поле (не редактируется) */}
 				<View
 					className='rounded-2xl p-6 border-2 mb-4'
-					style={{ borderColor: Colors.border || '#333333' }}
+					style={{ borderColor: '#333333' }}
 				>
 					<View className='flex-row items-center'>
 						<MaterialIcons
@@ -192,21 +189,23 @@ export default function Profile() {
 						{/* Поиск по ИНН */}
 						<View className='mb-6 pb-4 border-b border-gray-700 mt-4'>
 							<Text className='text-xs text-gray-500 uppercase tracking-widest mb-3 font-semibold'>
-								Автозаполнение по ИНН
+								Основная информация
 							</Text>
 
 							<View className='mb-3'>
 								<FormInput<IUserProfile>
-									name='inn'
-									keyboardType='numeric'
-									placeholder='ИНН'
+									name='name'
+									placeholder='Имя'
 									control={control}
-									rules={{
-										pattern: {
-											value: /^\d{10,}$/,
-											message: 'ИНН должен состоять минимум из 10 цифр'
-										}
-									}}
+								/>
+							</View>
+
+							<View className='mb-3'>
+								<FormInput<IUserProfile>
+									name='phone'
+									placeholder='Телефон'
+									keyboardType='phone-pad'
+									control={control}
 								/>
 							</View>
 						</View>
@@ -214,8 +213,8 @@ export default function Profile() {
 						{/* Редактируемые поля */}
 						<View className='gap-3 mb-6'>
 							<FormInput<IUserProfile>
-								name='displayName'
-								placeholder='Полное имя / Наименование компании'
+								name='name'
+								placeholder='Полное имя'
 								control={control}
 							/>
 						</View>
@@ -248,6 +247,57 @@ export default function Profile() {
 					</>
 				)}
 			</View>
+
+			{/* Данные поставщика для актов отгрузки */}
+			{isEditing && (
+				<View className='mx-6 mb-8'>
+					<Text className='text-xs text-gray-500 uppercase tracking-widest mb-4 font-semibold'>
+						Данные поставщика (для актов отгрузки)
+					</Text>
+
+					<View className='gap-3 mb-6'>
+						<FormInput<IUserProfile>
+							name='supplierFullName'
+							placeholder='ФИО или название компании'
+							control={control}
+						/>
+						<FormInput<IUserProfile>
+							name='supplierInn'
+							placeholder='ИНН'
+							keyboardType='numeric'
+							control={control}
+						/>
+						<FormInput<IUserProfile>
+							name='supplierAddress'
+							placeholder='Адрес'
+							control={control}
+						/>
+						<FormInput<IUserProfile>
+							name='supplierBankName'
+							placeholder='Название банка'
+							control={control}
+						/>
+						<FormInput<IUserProfile>
+							name='supplierBik'
+							placeholder='БИК'
+							keyboardType='numeric'
+							control={control}
+						/>
+						<FormInput<IUserProfile>
+							name='supplierAccountNumber'
+							placeholder='Расчетный счет'
+							keyboardType='numeric'
+							control={control}
+						/>
+						<FormInput<IUserProfile>
+							name='supplierCorrespondentAccount'
+							placeholder='Корреспондентский счет'
+							keyboardType='numeric'
+							control={control}
+						/>
+					</View>
+				</View>
+			)}
 
 			{/* Действия */}
 			{!isEditing && (

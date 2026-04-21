@@ -1,39 +1,43 @@
-import { ContractForm } from '@/components/Contracts/ContractForm'
-import useContractStore from '@/components/Contracts/contract.model'
+import { useClients } from '@/components/Clients/hooks/useClients'
+import { ShipmentForm } from '@/components/Contracts/ShipmentForm'
 import { useProducts } from '@/components/Products/hooks/useProducts'
-import { useClients } from '@/hooks/useClients'
-import { useDocuments } from '@/hooks/useDocuments'
-import { INewContractForm } from '@/shared/types/contracts.types'
+import { useShipments } from '@/hooks/useShipments'
+import { INewShipmentForm } from '@/shared/types/shipment.types'
 import { useRouter } from 'expo-router'
 import { FC, useState } from 'react'
 import { ActivityIndicator, Text, View } from 'react-native'
 
-const NewContractModal: FC = () => {
+const NewShipmentModal: FC = () => {
 	const router = useRouter()
-	const { addContract } = useContractStore()
 	const { clients, isLoading: clientsLoading } = useClients()
 	const { products, isLoading: productsLoading } = useProducts()
-	const { saveDocument } = useDocuments()
+	const { saveShipment } = useShipments()
 	const [isProcessing, setIsProcessing] = useState(false)
 
 	const clientsForSelect = clients.map(client => ({
 		id: client.id,
-		name: client.name
+		name: client.name,
+		inn: client.inn || '',
+		address: client.actualAddress || client.legalAddress || ''
 	}))
 
-	const handleCreateContract = async (formData: INewContractForm) => {
+	// Преобразуем товары в услуги
+	const servicesFromProducts = products.map(product => ({
+		id: product.id || '',
+		name: product.name,
+		price: product.price
+	}))
+
+	const handleCreateShipment = async (formData: INewShipmentForm) => {
 		setIsProcessing(true)
 		try {
-			// Сохраняем в Firebase
-			const savedContract = await saveDocument(formData)
+			const savedShipment = await saveShipment(formData)
 
-			if (savedContract) {
-				// Добавляем в локальный store
-				addContract(savedContract)
+			if (savedShipment) {
 				router.back()
 			}
 		} catch (error) {
-			console.error('Ошибка при создании договора:', error)
+			console.error('Ошибка при создании акта:', error)
 		} finally {
 			setIsProcessing(false)
 		}
@@ -44,7 +48,7 @@ const NewContractModal: FC = () => {
 			<View className='flex-1 bg-black items-center justify-center'>
 				<ActivityIndicator size='large' color='#3B82F6' />
 				<Text className='text-white mt-4'>
-					{isProcessing ? 'Сохранение договора...' : 'Загрузка данных...'}
+					{isProcessing ? 'Сохранение акта...' : 'Загрузка данных...'}
 				</Text>
 			</View>
 		)
@@ -52,13 +56,13 @@ const NewContractModal: FC = () => {
 
 	return (
 		<View className='flex-1 bg-black'>
-			<ContractForm
-				onSubmit={handleCreateContract}
+			<ShipmentForm
+				onSubmit={handleCreateShipment}
 				clients={clientsForSelect}
-				products={products}
+				services={servicesFromProducts}
 			/>
 		</View>
 	)
 }
 
-export default NewContractModal
+export default NewShipmentModal

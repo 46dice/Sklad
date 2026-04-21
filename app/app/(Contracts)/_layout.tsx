@@ -45,7 +45,7 @@ const ContractsLayout = () => {
 			<Stack.Screen
 				name='edit/[id]'
 				options={{
-					title: 'Редактировать договор'
+					title: 'Редактировать акт'
 				}}
 			/>
 			<Stack.Screen

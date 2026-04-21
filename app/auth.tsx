@@ -1,13 +1,15 @@
 import { useAuth } from '@/hooks/useAuth'
 import { validEmail } from '@/shared/reges'
 import { IAuthFormData } from '@/shared/types/auth.types'
+import { UserRole } from '@/shared/types/user.types'
 import { Button } from '@/shared/ui/Button'
 import DismissKeyboard from '@/shared/ui/DismissKeyboard'
 import { FormInput } from '@/shared/ui/FormInput'
+import { Feather } from '@expo/vector-icons'
 import { Redirect } from 'expo-router'
 import { useState } from 'react'
 import { SubmitHandler, useForm } from 'react-hook-form'
-import { Text, View } from 'react-native'
+import { Text, TouchableOpacity, View } from 'react-native'
 
 enum TypeAuth {
 	Register = 'Регистрация',
@@ -16,6 +18,7 @@ enum TypeAuth {
 
 export default function Auth() {
 	const [typeAuth, setTypeAuth] = useState<TypeAuth>(TypeAuth.Register)
+	const [selectedRole, setSelectedRole] = useState<UserRole>('manager')
 
 	const { user, handleLogin, handleRegister, isLoading } = useAuth()
 
@@ -39,7 +42,7 @@ export default function Auth() {
 		password
 	}) => {
 		if (isRegister) {
-			await handleRegister(email, password)
+			await handleRegister(email, password, selectedRole)
 		} else {
 			await handleLogin(email, password)
 		}
@@ -81,6 +84,70 @@ export default function Auth() {
 							}
 						}}
 					/>
+
+					{/* Выбор роли при регистрации */}
+					{isRegister && (
+						<View className='w-full mb-4'>
+							<Text className='text-gray-300 text-sm font-medium mb-2'>
+								Выберите роль
+							</Text>
+							<View className='flex-row gap-3'>
+								<TouchableOpacity
+									onPress={() => setSelectedRole('manager')}
+									className={`flex-1 p-4 rounded-lg border-2 ${
+										selectedRole === 'manager'
+											? 'border-primary bg-primary/20'
+											: 'border-gray-600 bg-gray-default'
+									}`}
+								>
+									<View className='items-center'>
+										<Feather
+											name='briefcase'
+											size={32}
+											color={selectedRole === 'manager' ? '#BF3335' : '#9CA3AF'}
+										/>
+										<Text
+											className={`mt-2 font-semibold ${
+												selectedRole === 'manager' ? 'text-primary' : 'text-gray-400'
+											}`}
+										>
+											Менеджер
+										</Text>
+										<Text className='text-gray-500 text-xs text-center mt-1'>
+											Управление товарами и продажами
+										</Text>
+									</View>
+								</TouchableOpacity>
+
+								<TouchableOpacity
+									onPress={() => setSelectedRole('courier')}
+									className={`flex-1 p-4 rounded-lg border-2 ${
+										selectedRole === 'courier'
+											? 'border-primary bg-primary/20'
+											: 'border-gray-600 bg-gray-default'
+									}`}
+								>
+									<View className='items-center'>
+										<Feather
+											name='truck'
+											size={32}
+											color={selectedRole === 'courier' ? '#BF3335' : '#9CA3AF'}
+										/>
+										<Text
+											className={`mt-2 font-semibold ${
+												selectedRole === 'courier' ? 'text-primary' : 'text-gray-400'
+											}`}
+										>
+											Курьер
+										</Text>
+										<Text className='text-gray-500 text-xs text-center mt-1'>
+											Выполнение доставок
+										</Text>
+									</View>
+								</TouchableOpacity>
+							</View>
+						</View>
+					)}
 
 					<Text
 						onPress={onToggleTypeAuth}

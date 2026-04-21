@@ -1,7 +1,8 @@
 import { useAuth } from '@/hooks/useAuth'
+import { useInvoices } from '@/hooks/useInvoices'
 import { useShipments } from '@/hooks/useShipments'
 import { ISupplierInfo } from '@/shared/types/shipment.types'
-import { exportShipmentToPDF } from '@/shared/utils/shipmentPDF'
+import { exportInvoiceToPDF } from '@/shared/utils/invoicePDF'
 import { Feather } from '@expo/vector-icons'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { FC, useMemo, useState } from 'react'
@@ -9,36 +10,22 @@ import { ScrollView, Text, TouchableOpacity, View } from 'react-native'
 
 type Props = Record<string, never>
 
-const getStatusLabel = (status: string) => {
-	const labels: Record<string, string> = {
-		draft: 'Черновик',
-		completed: 'Завершен'
-	}
-	return labels[status] || status
-}
-
-const getStatusColor = (status: string) => {
-	switch (status) {
-		case 'draft':
-			return '#F59E0B'
-		case 'completed':
-			return '#10B981'
-		default:
-			return '#9CA3AF'
-	}
-}
-
-const ShipmentView: FC<Props> = () => {
+const InvoiceView: FC<Props> = () => {
 	const { id } = useLocalSearchParams()
 	const router = useRouter()
 	const { userProfile } = useAuth()
-	const { shipments, completeShipment } = useShipments()
-	const [isCompleting, setIsCompleting] = useState(false)
+	const { invoices } = useInvoices()
+	const { shipments } = useShipments()
 	const [isExporting, setIsExporting] = useState(false)
 
-	const shipment = useMemo(() => {
-		return shipments.find(s => s.id === id)
-	}, [id, shipments])
+	const invoice = useMemo(() => {
+		return invoices.find(i => i.id === id)
+	}, [id, invoices])
+
+	const relatedShipments = useMemo(() => {
+		if (!invoice) return []
+		return shipments.filter(s => invoice.shipmentIds.includes(s.id))
+	}, [invoice, shipments])
 
 	// Получаем данные поставщика из профиля пользователя
 	const supplierInfo: ISupplierInfo = useMemo(() => {
@@ -54,42 +41,26 @@ const ShipmentView: FC<Props> = () => {
 		}
 	}, [userProfile])
 
-	if (!shipment) {
+	if (!invoice) {
 		return (
 			<View className='flex-1 bg-black'>
 				<View className='flex-row items-center p-4 border-b border-gray-700'>
 					<TouchableOpacity onPress={() => router.back()}>
 						<Feather name='arrow-left' size={24} color='white' />
 					</TouchableOpacity>
-					<Text className='text-white text-lg font-semibold ml-4'>Акт отгрузки</Text>
+					<Text className='text-white text-lg font-semibold ml-4'>Счет</Text>
 				</View>
 				<View className='flex-1 items-center justify-center'>
-					<Text className='text-gray-400'>Акт не найден</Text>
+					<Text className='text-gray-400'>Счет не найден</Text>
 				</View>
 			</View>
 		)
 	}
 
-	const handleCompleteShipment = async () => {
-		setIsCompleting(true)
-		try {
-			await completeShipment(shipment.id)
-			router.back()
-		} catch (error) {
-			alert('Ошибка при завершении акта: ' + String(error))
-		} finally {
-			setIsCompleting(false)
-		}
-	}
-
 	const handleExportPDF = async () => {
 		setIsExporting(true)
 		try {
-			// Логируем данные для отладки
-			console.log('Supplier Info:', supplierInfo)
-			console.log('User Profile:', userProfile)
-			
-			const success = await exportShipmentToPDF(shipment, supplierInfo)
+			const success = await exportInvoiceToPDF(invoice, relatedShipments, supplierInfo)
 			if (!success) {
 				alert('Ошибка при экспорте в PDF')
 			}
@@ -100,7 +71,8 @@ const ShipmentView: FC<Props> = () => {
 		}
 	}
 
-	const totalAmount = shipment.items.reduce((sum, item) => sum + item.totalAmount, 0)
+	const periodFrom = new Date(invoice.periodFrom).toLocaleDateString('ru-RU')
+	const periodTo = new Date(invoice.periodTo).toLocaleDateString('ru-RU')
 
 	return (
 		<ScrollView className='flex-1 bg-black' contentContainerStyle={{ padding: 16 }}>
@@ -110,57 +82,47 @@ const ShipmentView: FC<Props> = () => {
 					<Feather name='arrow-left' size={24} color='white' />
 				</TouchableOpacity>
 				<Text className='text-white text-xl font-bold flex-1 ml-4'>
-					{shipment.actNumber}
+					{invoice.invoiceNumber}
 				</Text>
 			</View>
 
-			{/* Status Badge */}
-			<View className='mb-4'>
-				<View
-					className='px-3 py-1 rounded-full self-start'
-					style={{ backgroundColor: getStatusColor(shipment.status) + '20' }}
-				>
-					<Text
-						className='text-xs font-semibold'
-						style={{ color: getStatusColor(shipment.status) }}
-					>
-						{getStatusLabel(shipment.status)}
-					</Text>
-				</View>
-			</View>
-
-			{/* Shipment Info */}
+			{/* Invoice Info */}
 			<View className='bg-gray-default rounded-lg p-4 mb-4 gap-3'>
 				<View className='pb-3 border-b border-gray-600'>
 					<Text className='text-gray-400 text-sm'>Контрагент</Text>
-					<Text className='text-white font-semibold text-base'>{shipment.clientName}</Text>
-					<Text className='text-gray-500 text-xs mt-1'>ИНН: {shipment.clientInn}</Text>
+					<Text className='text-white font-semibold text-base'>{invoice.clientName}</Text>
+					<Text className='text-gray-500 text-xs mt-1'>ИНН: {invoice.clientInn}</Text>
 				</View>
 
 				<View className='pb-3 border-b border-gray-600'>
 					<Text className='text-gray-400 text-sm'>Адрес</Text>
-					<Text className='text-white text-sm'>{shipment.clientAddress}</Text>
+					<Text className='text-white text-sm'>{invoice.clientAddress}</Text>
+				</View>
+
+				<View className='pb-3 border-b border-gray-600'>
+					<Text className='text-gray-400 text-sm'>Период</Text>
+					<Text className='text-white text-sm'>{periodFrom} - {periodTo}</Text>
 				</View>
 
 				<View className='pb-3 border-b border-gray-600'>
 					<Text className='text-gray-400 text-sm'>Сумма</Text>
 					<Text className='text-white font-semibold text-base'>
-						{totalAmount.toFixed(0)} ₽
+						{invoice.totalAmount.toFixed(0)} ₽
 					</Text>
 				</View>
 
 				<View>
-					<Text className='text-gray-400 text-sm'>Дата создания</Text>
-					<Text className='text-white text-sm'>
-						{new Date(shipment.createdAt).toLocaleDateString('ru-RU')}
+					<Text className='text-gray-400 text-sm'>Всего услуг</Text>
+					<Text className='text-white font-semibold text-base'>
+						{invoice.totalQuantity} шт
 					</Text>
 				</View>
 			</View>
 
-			{/* Services */}
-			{shipment.items && shipment.items.length > 0 ? (
+			{/* Services Summary */}
+			{invoice.items && invoice.items.length > 0 ? (
 				<View className='mb-4'>
-					<Text className='text-white text-lg font-bold mb-3'>Услуги в акте</Text>
+					<Text className='text-white text-lg font-bold mb-3'>Услуги в счете</Text>
 					<View className='bg-gray-default rounded-lg overflow-hidden'>
 						{/* Заголовок таблицы */}
 						<View className='flex-row bg-gray-600 p-3 border-b border-gray-500'>
@@ -179,10 +141,11 @@ const ShipmentView: FC<Props> = () => {
 						</View>
 
 						{/* Строки таблицы */}
-						{shipment.items.map((item, idx) => (
+						{invoice.items.map((item, idx) => (
 							<View key={idx} className='flex-row p-3 border-b border-gray-500'>
 								<View className='flex-1'>
 									<Text className='text-white text-sm'>{item.serviceName}</Text>
+									<Text className='text-gray-500 text-xs'>{item.actNumber}</Text>
 								</View>
 								<View className='w-16'>
 									<Text className='text-gray-300 text-sm text-right'>{item.quantity}</Text>
@@ -202,7 +165,7 @@ const ShipmentView: FC<Props> = () => {
 							<View className='w-56 flex-row items-center justify-between'>
 								<Text className='text-white font-semibold'>Итого:</Text>
 								<Text className='text-primary font-bold'>
-									{totalAmount.toFixed(0)}₽
+									{invoice.totalAmount.toFixed(0)}₽
 								</Text>
 							</View>
 						</View>
@@ -210,15 +173,24 @@ const ShipmentView: FC<Props> = () => {
 				</View>
 			) : (
 				<View className='mb-4 bg-gray-default rounded-lg p-4'>
-					<Text className='text-gray-400 text-sm'>В акте нет услуг</Text>
+					<Text className='text-gray-400 text-sm'>В счете нет услуг</Text>
 				</View>
 			)}
 
-			{/* Notes */}
-			{shipment.notes && (
-				<View className='mb-4 bg-gray-default rounded-lg p-4'>
-					<Text className='text-gray-400 text-sm mb-2'>Примечания</Text>
-					<Text className='text-white text-sm'>{shipment.notes}</Text>
+			{/* Related Shipments */}
+			{relatedShipments.length > 0 && (
+				<View className='mb-4'>
+					<Text className='text-white text-lg font-bold mb-3'>Приложенные акты ({relatedShipments.length})</Text>
+					<View className='gap-2'>
+						{relatedShipments.map(shipment => (
+							<View key={shipment.id} className='bg-gray-default rounded-lg p-3'>
+								<Text className='text-white font-semibold'>{shipment.actNumber}</Text>
+								<Text className='text-gray-400 text-xs mt-1'>
+									{new Date(shipment.createdAt).toLocaleDateString('ru-RU')} • {shipment.totalAmount}₽
+								</Text>
+							</View>
+						))}
+					</View>
 				</View>
 			)}
 
@@ -233,37 +205,12 @@ const ShipmentView: FC<Props> = () => {
 				>
 					<Feather name='download' size={20} color='white' />
 					<Text className='text-white font-bold ml-2'>
-						{isExporting ? 'Загрузка...' : 'Скачать PDF'}
+						{isExporting ? 'Загрузка...' : 'Скачать PDF со счетом и актами'}
 					</Text>
 				</TouchableOpacity>
-
-				{shipment.status === 'draft' && (
-					<TouchableOpacity
-						onPress={handleCompleteShipment}
-						disabled={isCompleting}
-						className={`p-3 rounded-lg flex-row items-center justify-center ${
-							isCompleting ? 'bg-gray-600' : 'bg-green-600'
-						}`}
-					>
-						<Feather name='check-circle' size={20} color='white' />
-						<Text className='text-white font-bold ml-2'>
-							{isCompleting ? 'Завершение...' : 'Завершить акт'}
-						</Text>
-					</TouchableOpacity>
-				)}
-
-				{shipment.status === 'draft' && (
-					<TouchableOpacity
-						onPress={() => router.push(`/app/(Contracts)/edit/${shipment.id}`)}
-						className='bg-primary p-3 rounded-lg flex-row items-center justify-center'
-					>
-						<Feather name='edit' size={20} color='white' />
-						<Text className='text-white font-bold ml-2'>Редактировать</Text>
-					</TouchableOpacity>
-				)}
 			</View>
 		</ScrollView>
 	)
 }
 
-export default ShipmentView
+export default InvoiceView

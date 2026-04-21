@@ -1,122 +1,205 @@
-import { ContractCard } from '@/components/Contracts/ContractCard'
-import { useDocuments } from '@/hooks/useDocuments'
+import { useClients } from '@/components/Clients/hooks/useClients'
+import { InvoiceCard } from '@/components/Contracts/InvoiceCard'
+import { ShipmentCard } from '@/components/Contracts/ShipmentCard'
+import { useInvoices } from '@/hooks/useInvoices'
+import { useShipments } from '@/hooks/useShipments'
 import { Feather } from '@expo/vector-icons'
 import { useFocusEffect, useRouter } from 'expo-router'
 import { FC, useCallback, useState } from 'react'
-import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native'
+import { ActivityIndicator, Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native'
 
 type Props = {}
 
-type FilterTab = 'all' | 'active' | 'draft'
+type FilterTab = 'shipments' | 'invoices'
 
 const Documents: FC<Props> = () => {
 	const router = useRouter()
-	const { contracts, isLoading, fetchDocuments, deleteDocument } = useDocuments()
-	const [activeFilter, setActiveFilter] = useState<FilterTab>('all')
+	const { shipments, isLoading: shipmentsLoading, fetchShipments, deleteShipment, completeShipment } = useShipments()
+	const { invoices, isLoading: invoicesLoading, fetchInvoices, deleteInvoice } = useInvoices()
+	const { clients } = useClients()
+	const [activeFilter, setActiveFilter] = useState<FilterTab>('shipments')
 
 	useFocusEffect(
 		useCallback(() => {
-			fetchDocuments()
-		}, [fetchDocuments])
+			fetchShipments()
+			fetchInvoices()
+		}, [fetchShipments, fetchInvoices])
 	)
 
-	const filteredContracts = contracts.filter(contract => {
-		if (activeFilter === 'all') return true
-		if (activeFilter === 'active') return contract.status === 'active'
-		if (activeFilter === 'draft') return contract.status === 'draft'
-		return true
-	})
-
-	const handleAddContract = () => {
+	const handleAddShipment = () => {
 		router.push('/app/(Contracts)/new')
 	}
 
-	const handleEditContract = (id: string) => {
+	const handleEditShipment = (id: string) => {
 		router.push(`/app/(Contracts)/edit/${id}`)
 	}
 
-	const handleViewContract = (id: string) => {
+	const handleViewShipment = (id: string) => {
 		router.push(`/app/(Contracts)/view/${id}`)
 	}
 
-	const handleDeleteContract = async (id: string) => {
-		await deleteDocument(id)
+	const handleDeleteShipment = async (id: string) => {
+		Alert.alert(
+			'Удалить акт?',
+			'Вы уверены, что хотите удалить этот акт отгрузки?',
+			[
+				{ text: 'Отмена', style: 'cancel' },
+				{
+					text: 'Удалить',
+					onPress: async () => {
+						await deleteShipment(id)
+						fetchShipments()
+					},
+					style: 'destructive'
+				}
+			]
+		)
 	}
 
-	const filterTabs: Array<{ label: string; value: FilterTab }> = [
-		{ label: 'Все', value: 'all' },
-		{ label: 'Активные', value: 'active' },
-		{ label: 'Черновики', value: 'draft' }
-	]
+	const handleCompleteShipment = async (id: string) => {
+		Alert.alert(
+			'Завершить акт?',
+			'Вы уверены, что хотите завершить этот акт отгрузки?',
+			[
+				{ text: 'Отмена', style: 'cancel' },
+				{
+					text: 'Завершить',
+					onPress: async () => {
+						await completeShipment(id)
+						fetchShipments()
+					}
+				}
+			]
+		)
+	}
+
+	const handleViewInvoice = (id: string) => {
+		router.push(`/app/(Contracts)/invoice-view/${id}`)
+	}
+
+	const handleDeleteInvoice = async (id: string) => {
+		Alert.alert(
+			'Удалить счет?',
+			'Вы уверены, что хотите удалить этот счет?',
+			[
+				{ text: 'Отмена', style: 'cancel' },
+				{
+					text: 'Удалить',
+					onPress: async () => {
+						await deleteInvoice(id)
+						fetchInvoices()
+					},
+					style: 'destructive'
+				}
+			]
+		)
+	}
+
+	const isLoading = activeFilter === 'shipments' ? shipmentsLoading : invoicesLoading
 
 	return (
 		<ScrollView className='flex-1 bg-black' contentContainerStyle={{ padding: 16 }}>
 			<View className='flex-row items-center justify-between mb-6'>
-				<Text className='text-white text-2xl font-bold'>Договоры</Text>
-				<TouchableOpacity
-					onPress={handleAddContract}
-					className='bg-primary w-10 h-10 rounded-full items-center justify-center'
-				>
-					<Feather name='plus' size={20} color='white' />
-				</TouchableOpacity>
+				<Text className='text-white text-2xl font-bold'>Документы</Text>
+				<View className='flex-row gap-2'>
+					{activeFilter === 'invoices' && (
+						<TouchableOpacity
+							onPress={() => router.push('/app/(Contracts)/invoice')}
+							className='bg-blue-600 w-10 h-10 rounded-full items-center justify-center'
+						>
+							<Feather name='file-text' size={20} color='white' />
+						</TouchableOpacity>
+					)}
+					{activeFilter === 'shipments' && (
+						<TouchableOpacity
+							onPress={handleAddShipment}
+							className='bg-primary w-10 h-10 rounded-full items-center justify-center'
+						>
+							<Feather name='plus' size={20} color='white' />
+						</TouchableOpacity>
+					)}
+				</View>
 			</View>
 
 			{/* Filter Tabs */}
-			<ScrollView
-				horizontal
-				showsHorizontalScrollIndicator={false}
-				className='mb-4'
-				contentContainerStyle={{ gap: 8 }}
-			>
-				{filterTabs.map(tab => (
-					<TouchableOpacity
-						key={tab.value}
-						onPress={() => setActiveFilter(tab.value)}
-						className={`px-4 py-2 rounded-full ${
-							activeFilter === tab.value
-								? 'bg-primary'
-								: 'bg-gray-default'
+			<View className='flex-row gap-2 mb-4'>
+				<TouchableOpacity
+					onPress={() => setActiveFilter('shipments')}
+					className={`flex-1 px-4 py-2 rounded-full ${
+						activeFilter === 'shipments'
+							? 'bg-primary'
+							: 'bg-gray-default'
+					}`}
+				>
+					<Text
+						className={`text-sm font-semibold text-center ${
+							activeFilter === 'shipments'
+								? 'text-white'
+								: 'text-gray-400'
 						}`}
 					>
-						<Text
-							className={`text-sm font-semibold ${
-								activeFilter === tab.value
-									? 'text-white'
-									: 'text-gray-400'
-							}`}
-						>
-							{tab.label}
-						</Text>
-					</TouchableOpacity>
-				))}
-			</ScrollView>
+						Акты
+					</Text>
+				</TouchableOpacity>
+				<TouchableOpacity
+					onPress={() => setActiveFilter('invoices')}
+					className={`flex-1 px-4 py-2 rounded-full ${
+						activeFilter === 'invoices'
+							? 'bg-primary'
+							: 'bg-gray-default'
+					}`}
+				>
+					<Text
+						className={`text-sm font-semibold text-center ${
+							activeFilter === 'invoices'
+								? 'text-white'
+								: 'text-gray-400'
+						}`}
+					>
+						Счета
+					</Text>
+				</TouchableOpacity>
+			</View>
 
-			{/* Contracts List */}
+			{/* Content */}
 			{isLoading ? (
 				<View className='items-center justify-center py-12'>
 					<ActivityIndicator size='large' color='#3B82F6' />
-					<Text className='text-gray-400 mt-4'>Загрузка договоров...</Text>
+					<Text className='text-gray-400 mt-4'>Загрузка...</Text>
 				</View>
 			) : (
 				<View>
-					{filteredContracts.length > 0 ? (
-						filteredContracts.map(contract => (
-							<ContractCard
-								key={contract.id}
-								contract={contract}
-								onPress={() => handleViewContract(contract.id)}
-								onEdit={() => handleEditContract(contract.id)}
-								onDelete={() => handleDeleteContract(contract.id)}
+					{activeFilter === 'shipments' ? (
+						shipments.length > 0 ? (
+							shipments.map(shipment => (
+								<ShipmentCard
+									key={shipment.id}
+									shipment={shipment}
+									onPress={() => handleViewShipment(shipment.id)}
+									onEdit={() => handleEditShipment(shipment.id)}
+									onDelete={() => handleDeleteShipment(shipment.id)}
+									onComplete={() => handleCompleteShipment(shipment.id)}
+								/>
+							))
+						) : (
+							<View className='items-center justify-center py-12'>
+								<Feather name='file-text' size={48} color='#666' />
+								<Text className='text-gray-500 mt-4'>Нет актов отгрузки</Text>
+							</View>
+						)
+					) : invoices.length > 0 ? (
+						invoices.map(invoice => (
+							<InvoiceCard
+								key={invoice.id}
+								invoice={invoice}
+								onPress={() => handleViewInvoice(invoice.id)}
+								onDelete={() => handleDeleteInvoice(invoice.id)}
 							/>
 						))
 					) : (
 						<View className='items-center justify-center py-12'>
 							<Feather name='file-text' size={48} color='#666' />
-							<Text className='text-gray-500 mt-4'>
-								{activeFilter === 'all'
-									? 'Нет договоров'
-									: `Нет ${filterTabs.find(t => t.value === activeFilter)?.label.toLowerCase()}`}
-							</Text>
+							<Text className='text-gray-500 mt-4'>Нет счетов</Text>
 						</View>
 					)}
 				</View>
