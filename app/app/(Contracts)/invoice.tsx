@@ -2,9 +2,10 @@ import { useClients } from '@/components/Clients/hooks/useClients'
 import { InvoiceForm } from '@/components/Contracts/InvoiceForm'
 import { useInvoices } from '@/hooks/useInvoices'
 import { INewInvoiceForm } from '@/shared/types/invoice.types'
+import { Feather } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
 import { FC, useState } from 'react'
-import { ActivityIndicator, Text, View } from 'react-native'
+import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native'
 
 const NewInvoiceModal: FC = () => {
 	const router = useRouter()
@@ -47,6 +48,17 @@ const NewInvoiceModal: FC = () => {
 
 	return (
 		<View className='flex-1 bg-black'>
+			{/* Header */}
+			<View className='flex-row items-center p-4 border-b border-gray-700'>
+				<TouchableOpacity onPress={() => router.back()} className='flex-row items-center gap-2'>
+					<Feather name='arrow-left' size={24} color='white' />
+					<Text className='text-white font-semibold'>Назад</Text>
+				</TouchableOpacity>
+				<Text className='text-white text-lg font-bold flex-1 ml-4'>
+					Новый счет
+				</Text>
+			</View>
+
 			<InvoiceForm
 				onSubmit={handleCreateInvoice}
 				clients={clientsForSelect}

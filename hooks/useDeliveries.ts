@@ -2,7 +2,7 @@ import { db } from '@/firebase'
 import { useAuth } from '@/hooks/useAuth'
 import { DeliveryStatus, IDeliveryReport, IDeliveryTask, INewDeliveryForm } from '@/shared/types/delivery.types'
 import { showToast } from '@/shared/ui/showToast'
-import { addDoc, collection, doc, getDoc, getDocs, orderBy, query, updateDoc } from 'firebase/firestore/lite'
+import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, orderBy, query, setDoc, updateDoc } from 'firebase/firestore/lite'
 import { useCallback, useEffect, useState } from 'react'
 import { useInventoryMovements } from './useInventoryMovements'
 
@@ -56,11 +56,15 @@ export const useDeliveries = () => {
 				status: 'pending' as const,
 				createdAt: new Date().toISOString(),
 				...(formData.customDestination && { customDestination: formData.customDestination }),
-				...(formData.notes && { notes: formData.notes })
+				...(formData.notes && { managerNotes: formData.notes })
 			}
 
 			const docRef = await addDoc(deliveriesCollection, newTask)
 			const savedTask: IDeliveryTask = { ...newTask, id: docRef.id }
+
+			// Сохраняем копию доставки в коллекции курьера
+			const courierDeliveriesCollection = collection(db, 'users', formData.courierId, 'deliveries')
+			await addDoc(courierDeliveriesCollection, newTask)
 
 			// Записываем движение товаров (резервирование для доставки)
 			for (const item of formData.items) {
@@ -101,6 +105,12 @@ export const useDeliveries = () => {
 
 		try {
 			const taskRef = doc(db, 'users', user.uid, 'deliveries', taskId)
+			const taskSnap = await getDoc(taskRef)
+			
+			if (!taskSnap.exists()) return false
+			
+			const task = taskSnap.data() as IDeliveryTask
+			
 			const updateData: Partial<IDeliveryTask> = {
 				status,
 				...additionalData
@@ -112,10 +122,9 @@ export const useDeliveries = () => {
 				updateData.deliveredAt = new Date().toISOString()
 			} else if (status === 'failed') {
 				// При неудачной доставке возвращаем товары на склад
-				const task = deliveries.find(d => d.id === taskId)
 				if (task) {
 					for (const item of task.items) {
-						const productRef = doc(db, 'users', user.uid, 'products', item.productId)
+						const productRef = doc(db, 'users', task.managerId, 'products', item.productId)
 						const productSnap = await getDoc(productRef)
 
 						if (productSnap.exists()) {
@@ -138,13 +147,27 @@ export const useDeliveries = () => {
 				}
 			}
 
+			// Обновляем в коллекции текущего пользователя
 			await updateDoc(taskRef, updateData)
 			
+			// Если это курьер, обновляем также в коллекции менеджера
+			if (task.managerId && task.managerId !== user.uid) {
+				const managerTaskRef = doc(db, 'users', task.managerId, 'deliveries', taskId)
+				try {
+					await updateDoc(managerTaskRef, updateData)
+				} catch (error: any) {
+					// Если документ не существует в коллекции менеджера, создаем его
+					if (error.code === 'not-found') {
+						await setDoc(managerTaskRef, { ...task, ...updateData })
+					}
+				}
+			}
+			
 			setDeliveries(prev => 
-				prev.map(task => 
-					task.id === taskId 
-						? { ...task, ...updateData }
-						: task
+				prev.map(t => 
+					t.id === taskId 
+						? { ...t, ...updateData }
+						: t
 				)
 			)
 			
@@ -154,7 +177,7 @@ export const useDeliveries = () => {
 			showToast(`Ошибка при обновлении статуса: ${error}`)
 			return false
 		}
-	}, [user, deliveries, recordMovement])
+	}, [user, recordMovement])
 
 	const submitDeliveryReport = useCallback(async (report: IDeliveryReport) => {
 		return await updateDeliveryStatus(report.taskId, 'delivered', {
@@ -173,6 +196,61 @@ export const useDeliveries = () => {
 		return deliveries.filter(delivery => delivery.status === status)
 	}, [deliveries])
 
+	// Удалить доставку
+	const deleteDelivery = useCallback(async (taskId: string) => {
+		if (!user) return false
+
+		try {
+			const taskRef = doc(db, 'users', user.uid, 'deliveries', taskId)
+			const taskSnap = await getDoc(taskRef)
+			
+			if (!taskSnap.exists()) return false
+			
+			const task = taskSnap.data() as IDeliveryTask
+
+			// Если доставка не завершена, возвращаем товары на склад
+			if (task.status !== 'delivered' && task.status !== 'failed') {
+				for (const item of task.items) {
+					const productRef = doc(db, 'users', user.uid, 'products', item.productId)
+					const productSnap = await getDoc(productRef)
+
+					if (productSnap.exists()) {
+						const currentQty: number = productSnap.data().quantity ?? 0
+						const newQty = currentQty + item.quantity
+						await updateDoc(productRef, { quantity: newQty })
+
+						await recordMovement({
+							productId: item.productId,
+							productName: item.productName,
+							movementType: 'return',
+							quantity: item.quantity,
+							previousQuantity: currentQty,
+							newQuantity: newQty,
+							relatedId: taskId,
+							reason: `Возврат при удалении доставки: ${task.taskNumber}`
+						})
+					}
+				}
+			}
+
+			// Удаляем из коллекции менеджера
+			await deleteDoc(taskRef)
+
+			// Удаляем из коллекции курьера
+			if (task.courierId) {
+				const courierTaskRef = doc(db, 'users', task.courierId, 'deliveries', taskId)
+				await deleteDoc(courierTaskRef)
+			}
+
+			setDeliveries(prev => prev.filter(d => d.id !== taskId))
+			showToast('Доставка удалена')
+			return true
+		} catch (error) {
+			showToast(`Ошибка при удалении доставки: ${error}`)
+			return false
+		}
+	}, [user, recordMovement])
+
 	useEffect(() => {
 		fetchDeliveries()
 	}, [fetchDeliveries])
@@ -185,6 +263,7 @@ export const useDeliveries = () => {
 		updateDeliveryStatus,
 		submitDeliveryReport,
 		getCourierDeliveries,
-		getDeliveriesByStatus
+		getDeliveriesByStatus,
+		deleteDelivery
 	}
 }

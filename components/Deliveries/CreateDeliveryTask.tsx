@@ -50,6 +50,11 @@ export const CreateDeliveryTask: FC<Props> = ({ couriers }) => {
 		deliveryCost: number
 	}>>([])
 
+	// Фильтруем товары - только те, что содержат слово "доставка"
+	const deliveryProducts = products.filter(p => 
+		p.name.toLowerCase().includes('доставка')
+	)
+
 	const handleSelectCourier = (courierId: string, courierName: string) => {
 		setFormData(prev => ({ ...prev, courierId, courierName }))
 		setShowCourierDropdown(false)
@@ -222,57 +227,61 @@ export const CreateDeliveryTask: FC<Props> = ({ couriers }) => {
 				<View className='mb-4'>
 					<Text className='text-gray-300 text-sm font-medium mb-2'>Товары для доставки *</Text>
 					<View className='bg-gray-default rounded-lg p-3'>
-						{products.map(product => {
-							const selected = selectedProducts.find(p => p.id === product.id)
-							return (
-								<View key={product.id} className='flex-row items-center gap-2 pb-3 mb-3 border-b border-gray-600 last:border-b-0 last:mb-0 last:pb-0'>
-									<View className='flex-1'>
-										<Text className='text-white font-medium text-sm'>{product.name}</Text>
-										<Text className='text-gray-400 text-xs'>Остаток: {product.quantity} шт</Text>
+						{deliveryProducts.length > 0 ? (
+							deliveryProducts.map(product => {
+								const selected = selectedProducts.find(p => p.id === product.id)
+								return (
+									<View key={product.id} className='flex-row items-center gap-2 pb-3 mb-3 border-b border-gray-600 last:border-b-0 last:mb-0 last:pb-0'>
+										<View className='flex-1'>
+											<Text className='text-white font-medium text-sm'>{product.name}</Text>
+											<Text className='text-gray-400 text-xs'>Остаток: {product.quantity} шт</Text>
+										</View>
+										<View className='flex-row items-center gap-2'>
+											<TouchableOpacity
+												onPress={() => handleProductQuantityChange(
+													product.id, 
+													Math.max(0, (selected?.quantity || 0) - 1),
+													selected?.deliveryCost || product.price
+												)}
+												className='bg-gray-600 w-7 h-7 rounded items-center justify-center'
+											>
+												<Text className='text-white'>−</Text>
+											</TouchableOpacity>
+											<Text className='text-white font-semibold w-8 text-center'>
+												{selected?.quantity || 0}
+											</Text>
+											<TouchableOpacity
+												onPress={() => handleProductQuantityChange(
+													product.id, 
+													(selected?.quantity || 0) + 1,
+													selected?.deliveryCost || product.price
+												)}
+												className='bg-primary w-7 h-7 rounded items-center justify-center'
+											>
+												<Text className='text-white'>+</Text>
+											</TouchableOpacity>
+										</View>
+										<View className='w-20'>
+											<TextInput
+												className='text-white'
+												placeholder={`${product.price}₽`}
+												placeholderTextColor='#999'
+												value={selected?.deliveryCost ? selected.deliveryCost.toString() : ''}
+												onChangeText={val => {
+													const cost = parseFloat(val) || product.price
+													if (selected) {
+														handleProductQuantityChange(product.id, selected.quantity, cost)
+													}
+												}}
+												keyboardType='numeric'
+											/>
+										</View>
 									</View>
-									<View className='flex-row items-center gap-2'>
-										<TouchableOpacity
-											onPress={() => handleProductQuantityChange(
-												product.id, 
-												Math.max(0, (selected?.quantity || 0) - 1),
-												selected?.deliveryCost || product.price
-											)}
-											className='bg-gray-600 w-7 h-7 rounded items-center justify-center'
-										>
-											<Text className='text-white'>−</Text>
-										</TouchableOpacity>
-										<Text className='text-white font-semibold w-8 text-center'>
-											{selected?.quantity || 0}
-										</Text>
-										<TouchableOpacity
-											onPress={() => handleProductQuantityChange(
-												product.id, 
-												(selected?.quantity || 0) + 1,
-												selected?.deliveryCost || product.price
-											)}
-											className='bg-primary w-7 h-7 rounded items-center justify-center'
-										>
-											<Text className='text-white'>+</Text>
-										</TouchableOpacity>
-									</View>
-									<View className='w-20'>
-										<TextInput
-											className='text-white'
-											placeholder={`${product.price}₽`}
-											placeholderTextColor='#999'
-											value={selected?.deliveryCost ? selected.deliveryCost.toString() : ''}
-											onChangeText={val => {
-												const cost = parseFloat(val) || product.price
-												if (selected) {
-													handleProductQuantityChange(product.id, selected.quantity, cost)
-												}
-											}}
-											keyboardType='numeric'
-										/>
-									</View>
-								</View>
-							)
-						})}
+								)
+							})
+						) : (
+							<Text className='text-gray-400 text-sm'>Нет доступных услуг доставки</Text>
+						)}
 					</View>
 				</View>
 

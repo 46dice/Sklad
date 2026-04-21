@@ -1,15 +1,14 @@
-import { useClients } from '@/components/Clients/hooks/useClients'
 import { useAuth } from '@/hooks/useAuth'
-import { useShipments } from '@/hooks/useShipments'
+import { useDeliveries } from '@/hooks/useDeliveries'
 import { Feather } from '@expo/vector-icons'
 import { useFocusEffect } from '@react-navigation/native'
 import { FC, useCallback, useMemo, useState } from 'react'
 import {
-	Dimensions,
-	Pressable,
-	ScrollView,
-	Text,
-	View
+    Dimensions,
+    Pressable,
+    ScrollView,
+    Text,
+    View
 } from 'react-native'
 import { LineChart } from 'react-native-chart-kit'
 
@@ -17,59 +16,59 @@ type Props = Record<string, never>
 
 type FilterPeriod = 'week' | 'month' | 'year'
 
-const MonitoringScreen: FC<Props> = () => {
+const IncomeScreen: FC<Props> = () => {
 	const { user } = useAuth()
-	const { clients } = useClients()
-	const { shipments, fetchShipments } = useShipments()
+	const { deliveries, fetchDeliveries } = useDeliveries()
 	const [filterPeriod, setFilterPeriod] = useState<FilterPeriod>('week')
 
-	// Обновляем мониторинг при возврате на вкладку
 	useFocusEffect(
 		useCallback(() => {
-			fetchShipments()
-		}, [fetchShipments])
+			fetchDeliveries()
+		}, [fetchDeliveries])
 	)
 
-	// Фильтруем акты по периоду
-	const getFilteredShipments = useCallback(() => {
+	// Фильтруем доставки текущего курьера со статусом "delivered"
+	const courierDeliveries = useMemo(() => {
+		if (!user) return []
+		return deliveries.filter(d => d.courierId === user.uid && d.status === 'delivered')
+	}, [deliveries, user])
+
+	// Фильтруем по периоду
+	const getFilteredDeliveries = useCallback(() => {
 		const now = new Date()
 		const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
 
-		return shipments.filter(shipment => {
-			const shipmentDate = new Date(shipment.createdAt)
-			const shipmentDay = new Date(shipmentDate.getFullYear(), shipmentDate.getMonth(), shipmentDate.getDate())
+		return courierDeliveries.filter(delivery => {
+			const deliveryDate = new Date(delivery.completedAt || delivery.createdAt)
+			const deliveryDay = new Date(deliveryDate.getFullYear(), deliveryDate.getMonth(), deliveryDate.getDate())
 
 			switch (filterPeriod) {
 				case 'week':
 					const weekAgo = new Date(today)
 					weekAgo.setDate(weekAgo.getDate() - 7)
-					return shipmentDay >= weekAgo && shipmentDay <= today
+					return deliveryDay >= weekAgo && deliveryDay <= today
 				case 'month':
-					return shipmentDate.getMonth() === now.getMonth() && shipmentDate.getFullYear() === now.getFullYear()
+					return deliveryDate.getMonth() === now.getMonth() && deliveryDate.getFullYear() === now.getFullYear()
 				case 'year':
-					return shipmentDate.getFullYear() === now.getFullYear()
+					return deliveryDate.getFullYear() === now.getFullYear()
 				default:
 					return true
 			}
 		})
-	}, [shipments, filterPeriod])
+	}, [courierDeliveries, filterPeriod])
 
-	const filteredShipments = getFilteredShipments()
+	const filteredDeliveries = getFilteredDeliveries()
 
 	// Получаем статистику
 	const stats = useMemo(() => {
-		const totalAmount = filteredShipments.reduce((sum, shipment) => sum + shipment.totalAmount, 0)
-		const totalQuantity = filteredShipments.reduce((sum, shipment) =>
-			sum + shipment.items.reduce((itemSum, item) => itemSum + item.quantity, 0), 0
-		)
-		const totalShipments = filteredShipments.length
+		const totalIncome = filteredDeliveries.reduce((sum, delivery) => sum + delivery.totalCost, 0)
+		const totalDeliveries = filteredDeliveries.length
 
 		return {
-			totalAmount,
-			totalQuantity,
-			totalShipments
+			totalIncome,
+			totalDeliveries
 		}
-	}, [filteredShipments])
+	}, [filteredDeliveries])
 
 	// Получаем данные для графика
 	const chartDataWithMax = useMemo(() => {
@@ -78,22 +77,21 @@ const MonitoringScreen: FC<Props> = () => {
 		const data: number[] = []
 
 		if (filterPeriod === 'week') {
-			// Последние 7 дней: от сегодня-6 до сегодня
+			// Последние 7 дней
 			const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
 			for (let i = 6; i >= 0; i--) {
 				const date = new Date(today)
 				date.setDate(today.getDate() - i)
 				labels.push(date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'numeric' }))
-				const dayShipments = filteredShipments.filter(s => {
-					const sDate = new Date(s.createdAt)
-					return sDate.toDateString() === date.toDateString()
+				const dayDeliveries = filteredDeliveries.filter(d => {
+					const dDate = new Date(d.completedAt || d.createdAt)
+					return dDate.toDateString() === date.toDateString()
 				})
-				const amount = dayShipments.reduce((sum, s) => sum + s.totalAmount, 0)
+				const amount = dayDeliveries.reduce((sum, d) => sum + d.totalCost, 0)
 				data.push(amount)
 			}
-			// метки уже в порядке от старого к новому
 		} else if (filterPeriod === 'month') {
-			// 5 недель: по одной точке на неделю
+			// 5 недель
 			const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
 			const weekLabels: string[] = []
 			const weekData: number[] = []
@@ -107,34 +105,32 @@ const MonitoringScreen: FC<Props> = () => {
 				weekStart.setDate(weekStart.getDate() - 6)
 				weekStart.setHours(0, 0, 0, 0)
 				
-				// Метка: дата конца недели (самая свежая дата в этой неделе)
 				weekLabels.push(weekEnd.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' }))
 				
-				const weekShipments = filteredShipments.filter(s => {
-					const sDate = new Date(s.createdAt)
-					return sDate >= weekStart && sDate <= weekEnd
+				const weekDeliveries = filteredDeliveries.filter(d => {
+					const dDate = new Date(d.completedAt || d.createdAt)
+					return dDate >= weekStart && dDate <= weekEnd
 				})
-				const amount = weekShipments.reduce((sum, s) => sum + s.totalAmount, 0)
+				const amount = weekDeliveries.reduce((sum, d) => sum + d.totalCost, 0)
 				weekData.push(amount)
 			}
 			labels.push(...weekLabels)
 			data.push(...weekData)
 		} else { // year
-			// Последние 12 месяцев с шагом в 2 месяца (от апреля прошлого года до апреля текущего)
+			// 12 месяцев с шагом в 2 месяца
 			const monthNames = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек']
 			for (let i = 11; i >= 0; i -= 2) {
 				const date = new Date(now.getFullYear(), now.getMonth() - i + 1, 1)
 				labels.push(monthNames[date.getMonth()].substring(0, 3))
 				
-				// Суммируем данные за 2 месяца
 				let amount = 0
 				for (let m = 0; m < 2; m++) {
 					const monthDate = new Date(now.getFullYear(), now.getMonth() - i + m, 1)
-					const monthShipments = filteredShipments.filter(s => {
-						const sDate = new Date(s.createdAt)
-						return sDate.getMonth() === monthDate.getMonth() && sDate.getFullYear() === monthDate.getFullYear()
+					const monthDeliveries = filteredDeliveries.filter(d => {
+						const dDate = new Date(d.completedAt || d.createdAt)
+						return dDate.getMonth() === monthDate.getMonth() && dDate.getFullYear() === monthDate.getFullYear()
 					})
-					amount += monthShipments.reduce((sum, s) => sum + s.totalAmount, 0)
+					amount += monthDeliveries.reduce((sum, d) => sum + d.totalCost, 0)
 				}
 				data.push(amount)
 			}
@@ -146,19 +142,17 @@ const MonitoringScreen: FC<Props> = () => {
 			datasets: [{ data }],
 			maxValue
 		}
-	}, [filteredShipments, filterPeriod])
+	}, [filteredDeliveries, filterPeriod])
 
 	const chartData = chartDataWithMax
 	const screenWidth = Dimensions.get('window').width
 	const screenHeight = Dimensions.get('window').height
 	const chartHeight = Math.floor(screenHeight * 0.5)
 
-	// Динамическая ширина графика - минимум ширина экрана, максимум с учетом количества точек
 	const minChartWidth = screenWidth - 40
 	const pointWidth = filterPeriod === 'week' ? 40 : filterPeriod === 'month' ? 50 : 35
 	const chartWidth = Math.max(minChartWidth, chartData.labels.length * pointWidth)
 
-	// Вычисляем правильный максимум для Y-оси
 	const yAxisMax = Math.ceil(chartData.maxValue / 1000) * 1000 || 1000
 
 	const filterButtons = [
@@ -171,16 +165,16 @@ const MonitoringScreen: FC<Props> = () => {
 		<View className='flex-1'>
 			{/* Header */}
 			<View className='flex-row items-center justify-between px-4 pt-4 pb-2'>
-				<Text className='text-white text-2xl font-bold'>Мониторинг</Text>
+				<Text className='text-white text-2xl font-bold'>Мой доход</Text>
 			</View>
 
 			{/* Scrollable content */}
 			<ScrollView className='flex-1' contentContainerStyle={{ padding: 16 }}>
 				<View className='gap-4'>
-					{/* График выручки */}
+					{/* График дохода */}
 					<View className='bg-gray-default rounded-lg p-4 overflow-hidden'>
 						<Text className='text-white text-lg font-semibold mb-4'>
-							Выручка из актов
+							Доход от доставок
 						</Text>
 						<ScrollView horizontal showsHorizontalScrollIndicator={true}>
 							<LineChart
@@ -257,61 +251,26 @@ const MonitoringScreen: FC<Props> = () => {
 					<View className='flex-row gap-3'>
 						<View className='flex-1 bg-gray-default rounded-lg p-4'>
 							<View className='flex-row items-center mb-2'>
-								<Feather name='file-text' size={20} color='#BF3335' />
+								<Feather name='truck' size={20} color='#BF3335' />
 								<Text className='text-white text-sm font-semibold ml-2'>
-									Актов
+									Доставок
 								</Text>
 							</View>
 							<Text className='text-3xl font-bold text-primary'>
-								{stats.totalShipments}
-							</Text>
-						</View>
-
-						<View className='flex-1 bg-gray-default rounded-lg p-4'>
-							<View className='flex-row items-center mb-2'>
-								<Feather name='shopping-cart' size={20} color='#BF3335' />
-								<Text className='text-white text-sm font-semibold ml-2'>
-									Услуг
-								</Text>
-							</View>
-							<Text className='text-3xl font-bold text-primary'>
-								{stats.totalQuantity}
+								{stats.totalDeliveries}
 							</Text>
 						</View>
 
 						<View className='flex-1 bg-gray-default rounded-lg p-4'>
 							<View className='flex-row items-center mb-2'>
 								<Text className='text-white text-sm font-semibold ml-2'>
-									Выручка (руб.)
+									Доход (руб.)
 								</Text>
 							</View>
 							<Text className='text-3xl font-bold text-primary'>
-								{stats.totalAmount.toFixed(0)}
+								{stats.totalIncome.toFixed(0)}
 							</Text>
 						</View>
-					</View>
-
-					{/* Статистика */}
-					<View className='bg-gray-default rounded-lg p-4'>
-						<View className='flex-row items-center mb-2'>
-							<Feather name='users' size={24} color='#BF3335' />
-							<Text className='text-white text-lg font-semibold ml-3'>
-								Всего контрагентов
-							</Text>
-						</View>
-						<Text className='text-4xl font-bold text-primary'>
-							{clients.length}
-						</Text>
-					</View>
-
-					<View className='bg-gray-default rounded-lg p-4'>
-						<View className='flex-row items-center mb-2'>
-							<Feather name='log-in' size={24} color='#BF3335' />
-							<Text className='text-white text-lg font-semibold ml-3'>
-								Аккаунт
-							</Text>
-						</View>
-						<Text className='text-gray-500 text-sm'>{user?.email}</Text>
 					</View>
 				</View>
 			</ScrollView>
@@ -319,4 +278,4 @@ const MonitoringScreen: FC<Props> = () => {
 	)
 }
 
-export default MonitoringScreen
+export default IncomeScreen

@@ -6,7 +6,6 @@ import { IUserProfile } from '@/shared/types/user.types'
 import { Button } from '@/shared/ui/Button'
 import { FormInput } from '@/shared/ui/FormInput'
 import { MaterialIcons } from '@expo/vector-icons'
-import { isEqual } from 'lodash'
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Pressable, ScrollView, Text, View } from 'react-native'
@@ -15,11 +14,11 @@ export default function Profile() {
 	const { user, userProfile, isLoading: authLoading } = useAuth()
 	const { updateUserProfile } = useUserProfile()
 	const [isEditing, setIsEditing] = useState(false)
-	const [hasChanges, setHasChanges] = useState(false)
 	const [initialData, setInitialData] = useState<IUserProfile | null>(null)
 	const [isSaving, setIsSaving] = useState(false)
+	const isCourier = userProfile?.role === 'courier'
 
-	const { control, watch, reset, setValue } = useForm<IUserProfile>({
+	const { control, watch, reset } = useForm<IUserProfile>({
 		mode: 'onChange',
 		defaultValues: {
 			email: '',
@@ -48,14 +47,6 @@ export default function Profile() {
 
 	const watchedFields = watch()
 
-	useEffect(() => {
-		if (initialData && !isEqual(initialData, watchedFields)) {
-			setHasChanges(true)
-		} else {
-			setHasChanges(false)
-		}
-	}, [watchedFields, initialData])
-
 	const handleSaveChanges = async () => {
 		if (!user) return
 
@@ -65,7 +56,6 @@ export default function Profile() {
 
 			if (success) {
 				setInitialData(watchedFields)
-				setHasChanges(false)
 				setIsEditing(false)
 			}
 		} finally {
@@ -186,7 +176,7 @@ export default function Profile() {
 
 				{isEditing && (
 					<>
-						{/* Поиск по ИНН */}
+						{/* Основная информация */}
 						<View className='mb-6 pb-4 border-b border-gray-700 mt-4'>
 							<Text className='text-xs text-gray-500 uppercase tracking-widest mb-3 font-semibold'>
 								Основная информация
@@ -209,93 +199,160 @@ export default function Profile() {
 								/>
 							</View>
 						</View>
-
-						{/* Редактируемые поля */}
-						<View className='gap-3 mb-6'>
-							<FormInput<IUserProfile>
-								name='name'
-								placeholder='Полное имя'
-								control={control}
-							/>
-						</View>
-
-						{/* Кнопки действий */}
-						<View className='gap-3'>
-							<Button
-								className='w-full'
-								disabled={isSaving}
-								onPress={handleSaveChanges}
-							>
-								<Text className='text-white font-semibold'>
-									{isSaving ? 'Сохранение...' : 'Сохранить изменения'}
-								</Text>
-							</Button>
-
-							<Button
-								className='w-full'
-								variant='ghost'
-								onPress={() => {
-									setIsEditing(false)
-									reset(initialData || undefined)
-									setHasChanges(false)
-								}}
-								disabled={isSaving}
-							>
-								<Text className='text-white font-semibold'>Отмена</Text>
-							</Button>
-						</View>
 					</>
 				)}
 			</View>
 
 			{/* Данные поставщика для актов отгрузки */}
-			{isEditing && (
+			{!isCourier && (
 				<View className='mx-6 mb-8'>
 					<Text className='text-xs text-gray-500 uppercase tracking-widest mb-4 font-semibold'>
 						Данные поставщика (для актов отгрузки)
 					</Text>
 
-					<View className='gap-3 mb-6'>
-						<FormInput<IUserProfile>
-							name='supplierFullName'
-							placeholder='ФИО или название компании'
-							control={control}
-						/>
-						<FormInput<IUserProfile>
-							name='supplierInn'
-							placeholder='ИНН'
-							keyboardType='numeric'
-							control={control}
-						/>
-						<FormInput<IUserProfile>
-							name='supplierAddress'
-							placeholder='Адрес'
-							control={control}
-						/>
-						<FormInput<IUserProfile>
-							name='supplierBankName'
-							placeholder='Название банка'
-							control={control}
-						/>
-						<FormInput<IUserProfile>
-							name='supplierBik'
-							placeholder='БИК'
-							keyboardType='numeric'
-							control={control}
-						/>
-						<FormInput<IUserProfile>
-							name='supplierAccountNumber'
-							placeholder='Расчетный счет'
-							keyboardType='numeric'
-							control={control}
-						/>
-						<FormInput<IUserProfile>
-							name='supplierCorrespondentAccount'
-							placeholder='Корреспондентский счет'
-							keyboardType='numeric'
-							control={control}
-						/>
-					</View>
+					{isEditing ? (
+						<View className='gap-3 mb-6'>
+							<FormInput<IUserProfile>
+								name='supplierFullName'
+								placeholder='ФИО или название компании'
+								control={control}
+							/>
+							<FormInput<IUserProfile>
+								name='supplierInn'
+								placeholder='ИНН'
+								keyboardType='numeric'
+								control={control}
+							/>
+							<FormInput<IUserProfile>
+								name='supplierAddress'
+								placeholder='Адрес'
+								control={control}
+							/>
+							<FormInput<IUserProfile>
+								name='supplierBankName'
+								placeholder='Название банка'
+								control={control}
+							/>
+							<FormInput<IUserProfile>
+								name='supplierBik'
+								placeholder='БИК'
+								keyboardType='numeric'
+								control={control}
+							/>
+							<FormInput<IUserProfile>
+								name='supplierAccountNumber'
+								placeholder='Расчетный счет'
+								keyboardType='numeric'
+								control={control}
+							/>
+							<FormInput<IUserProfile>
+								name='supplierCorrespondentAccount'
+								placeholder='Корреспондентский счет'
+								keyboardType='numeric'
+								control={control}
+							/>
+						</View>
+					) : (
+						<View className='gap-3'>
+							{watchedFields.supplierFullName && (
+								<View className='rounded-2xl p-4 border border-gray-700'>
+									<Text className='text-xs text-gray-400 font-semibold uppercase tracking-wider mb-1'>
+										Название
+									</Text>
+									<Text className='text-base text-white font-medium'>
+										{watchedFields.supplierFullName}
+									</Text>
+								</View>
+							)}
+							{watchedFields.supplierInn && (
+								<View className='rounded-2xl p-4 border border-gray-700'>
+									<Text className='text-xs text-gray-400 font-semibold uppercase tracking-wider mb-1'>
+										ИНН
+									</Text>
+									<Text className='text-base text-white font-medium'>
+										{watchedFields.supplierInn}
+									</Text>
+								</View>
+							)}
+							{watchedFields.supplierAddress && (
+								<View className='rounded-2xl p-4 border border-gray-700'>
+									<Text className='text-xs text-gray-400 font-semibold uppercase tracking-wider mb-1'>
+										Адрес
+									</Text>
+									<Text className='text-base text-white font-medium'>
+										{watchedFields.supplierAddress}
+									</Text>
+								</View>
+							)}
+							{watchedFields.supplierBankName && (
+								<View className='rounded-2xl p-4 border border-gray-700'>
+									<Text className='text-xs text-gray-400 font-semibold uppercase tracking-wider mb-1'>
+										Банк
+									</Text>
+									<Text className='text-base text-white font-medium'>
+										{watchedFields.supplierBankName}
+									</Text>
+								</View>
+							)}
+							{watchedFields.supplierBik && (
+								<View className='rounded-2xl p-4 border border-gray-700'>
+									<Text className='text-xs text-gray-400 font-semibold uppercase tracking-wider mb-1'>
+										БИК
+									</Text>
+									<Text className='text-base text-white font-medium'>
+										{watchedFields.supplierBik}
+									</Text>
+								</View>
+							)}
+							{watchedFields.supplierAccountNumber && (
+								<View className='rounded-2xl p-4 border border-gray-700'>
+									<Text className='text-xs text-gray-400 font-semibold uppercase tracking-wider mb-1'>
+										Расчетный счет
+									</Text>
+									<Text className='text-base text-white font-medium'>
+										{watchedFields.supplierAccountNumber}
+									</Text>
+								</View>
+							)}
+							{watchedFields.supplierCorrespondentAccount && (
+								<View className='rounded-2xl p-4 border border-gray-700'>
+									<Text className='text-xs text-gray-400 font-semibold uppercase tracking-wider mb-1'>
+										Корреспондентский счет
+									</Text>
+									<Text className='text-base text-white font-medium'>
+										{watchedFields.supplierCorrespondentAccount}
+									</Text>
+								</View>
+							)}
+						</View>
+					)}
+				</View>
+			)}
+
+			{/* Кнопки действий - в конце */}
+			{isEditing && (
+				<View className='mx-6 gap-3 mb-8'>
+					<Button
+						className='w-full'
+						disabled={isSaving}
+						onPress={handleSaveChanges}
+					>
+						<Text className='text-white font-semibold'>
+							{isSaving ? 'Сохранение...' : 'Сохранить изменения'}
+						</Text>
+					</Button>
+
+					<Button
+						className='w-full'
+						variant='ghost'
+						onPress={() => {
+							setIsEditing(false)
+							reset(initialData || undefined)
+						}}
+						disabled={isSaving}
+					>
+						<Text className='text-white font-semibold'>Отмена</Text>
+					</Button>
 				</View>
 			)}
 

@@ -1,12 +1,16 @@
 import { CourierDeliveryReport } from '@/components/Deliveries/CourierDeliveryReport'
 import { CreateDeliveryTask } from '@/components/Deliveries/CreateDeliveryTask'
+import { useAuth } from '@/hooks/useAuth'
+import { useCouriers } from '@/hooks/useCouriers'
 import { useDeliveries } from '@/hooks/useDeliveries'
 import { DeliveryStatus, IDeliveryTask } from '@/shared/types/delivery.types'
 import { Feather } from '@expo/vector-icons'
 import { useFocusEffect } from '@react-navigation/native'
-import { FC, useCallback, useState } from 'react'
+import { useRouter } from 'expo-router'
+import { FC, useCallback, useMemo, useState } from 'react'
 import {
 	ActivityIndicator,
+	Alert,
 	Modal,
 	ScrollView,
 	Text,
@@ -17,13 +21,6 @@ import {
 type Props = Record<string, never>
 
 type FilterTab = 'all' | 'pending' | 'in_transit' | 'delivered'
-
-// Моковые курьеры (в реальном приложении это будет из базы)
-const MOCK_COURIERS = [
-	{ id: 'courier1', name: 'Иван Петров' },
-	{ id: 'courier2', name: 'Мария Сидорова' },
-	{ id: 'courier3', name: 'Алексей Козлов' }
-]
 
 const getStatusColor = (status: DeliveryStatus) => {
 	switch (status) {
@@ -48,57 +45,99 @@ const getStatusLabel = (status: DeliveryStatus) => {
 const DeliveryCard: FC<{ 
 	delivery: IDeliveryTask
 	onPress: () => void
-}> = ({ delivery, onPress }) => {
+	onDelete?: (id: string) => void
+	isManager?: boolean
+}> = ({ delivery, onPress, onDelete, isManager }) => {
 	const totalItems = delivery.items.reduce((sum, item) => sum + item.quantity, 0)
 
 	return (
-		<TouchableOpacity onPress={onPress}>
-			<View className='bg-gray-default rounded-lg p-4 mb-3'>
-				<View className='flex-row items-start justify-between mb-2'>
-					<View className='flex-1'>
-						<View className='flex-row items-center gap-2 mb-1'>
-							<Feather name='truck' size={16} color='#BF3335' />
-							<Text className='text-white font-semibold'>{delivery.taskNumber}</Text>
+		<View>
+			<TouchableOpacity onPress={onPress}>
+				<View className='bg-gray-default rounded-lg p-4 mb-3'>
+					<View className='flex-row items-start justify-between mb-2'>
+						<View className='flex-1'>
+							<View className='flex-row items-center gap-2 mb-1'>
+								<Feather name='truck' size={16} color='#BF3335' />
+								<Text className='text-white font-semibold'>{delivery.taskNumber}</Text>
+							</View>
+							<Text className='text-gray-400 text-sm'>Курьер: {delivery.courierName}</Text>
+							<Text className='text-gray-400 text-sm'>Товаров: {totalItems} шт.</Text>
 						</View>
-						<Text className='text-gray-400 text-sm'>Курьер: {delivery.courierName}</Text>
-						<Text className='text-gray-400 text-sm'>Товаров: {totalItems} шт.</Text>
-					</View>
-					<View
-						className='px-3 py-1 rounded-full'
-						style={{ backgroundColor: getStatusColor(delivery.status) + '20' }}
-					>
-						<Text
-							className='text-xs font-semibold'
-							style={{ color: getStatusColor(delivery.status) }}
+						<View
+							className='px-3 py-1 rounded-full'
+							style={{ backgroundColor: getStatusColor(delivery.status) + '20' }}
 						>
-							{getStatusLabel(delivery.status)}
+							<Text
+								className='text-xs font-semibold'
+								style={{ color: getStatusColor(delivery.status) }}
+							>
+								{getStatusLabel(delivery.status)}
+							</Text>
+						</View>
+					</View>
+
+					<View className='flex-row items-center gap-2 mb-2'>
+						<Feather name='map-pin' size={14} color='#666' />
+						<Text className='text-gray-300 text-sm flex-1' numberOfLines={1}>
+							{delivery.destinationAddress}
 						</Text>
 					</View>
-				</View>
 
-				<View className='flex-row items-center gap-2 mb-2'>
-					<Feather name='map-pin' size={14} color='#666' />
-					<Text className='text-gray-300 text-sm flex-1' numberOfLines={1}>
-						{delivery.destinationAddress}
-					</Text>
+					<View className='flex-row items-center justify-between'>
+						<Text className='text-gray-500 text-xs'>
+							{new Date(delivery.createdAt).toLocaleDateString('ru-RU')}
+						</Text>
+						<Text className='text-primary font-bold'>{delivery.totalCost}₽</Text>
+					</View>
 				</View>
-
-				<View className='flex-row items-center justify-between'>
-					<Text className='text-gray-500 text-xs'>
-						{new Date(delivery.createdAt).toLocaleDateString('ru-RU')}
-					</Text>
-					<Text className='text-primary font-bold'>{delivery.totalCost}₽</Text>
-				</View>
-			</View>
-		</TouchableOpacity>
+			</TouchableOpacity>
+			{isManager && onDelete && (
+				<TouchableOpacity
+					onPress={() => {
+						Alert.alert(
+							'Удалить доставку?',
+							'Вы уверены, что хотите удалить эту доставку?',
+							[
+								{
+									text: 'Отмена',
+									onPress: () => {},
+									style: 'cancel'
+								},
+								{
+									text: 'Удалить',
+									onPress: () => onDelete(delivery.id),
+									style: 'destructive'
+								}
+							]
+						)
+					}}
+					className='bg-red-600/20 rounded-lg p-2 mb-3 flex-row items-center justify-center border border-red-600/30'
+				>
+					<Feather name='trash-2' size={16} color='#EF4444' />
+					<Text className='text-red-400 text-sm font-semibold ml-2'>Удалить</Text>
+				</TouchableOpacity>
+			)}
+		</View>
 	)
 }
 
 const Deliveries: FC<Props> = () => {
-	const { deliveries, isLoading, fetchDeliveries } = useDeliveries()
+	const { user, userProfile } = useAuth()
+	const router = useRouter()
+	const { deliveries, isLoading, fetchDeliveries, deleteDelivery } = useDeliveries()
+	const { couriers } = useCouriers()
 	const [activeFilter, setActiveFilter] = useState<FilterTab>('all')
-	const [showCreateModal, setShowCreateModal] = useState(false)
 	const [selectedDelivery, setSelectedDelivery] = useState<IDeliveryTask | null>(null)
+	const [showCreateModal, setShowCreateModal] = useState(false)
+
+	const isCourier = userProfile?.role === 'courier'
+
+	const handleDeleteDelivery = async (taskId: string) => {
+		const success = await deleteDelivery(taskId)
+		if (success) {
+			fetchDeliveries()
+		}
+	}
 
 	useFocusEffect(
 		useCallback(() => {
@@ -106,7 +145,15 @@ const Deliveries: FC<Props> = () => {
 		}, [fetchDeliveries])
 	)
 
-	const filteredDeliveries = deliveries.filter(delivery => {
+	// Для курьера показываем только его доставки, для менеджера - все
+	const displayedDeliveries = useMemo(() => {
+		if (isCourier && user) {
+			return deliveries.filter(d => d.courierId === user.uid)
+		}
+		return deliveries
+	}, [deliveries, isCourier, user])
+
+	const filteredDeliveries = displayedDeliveries.filter(delivery => {
 		if (activeFilter === 'all') return true
 		return delivery.status === activeFilter
 	})
@@ -128,12 +175,21 @@ const Deliveries: FC<Props> = () => {
 				{/* Header */}
 				<View className='flex-row items-center justify-between mb-6'>
 					<Text className='text-white text-2xl font-bold'>Доставки</Text>
-					<TouchableOpacity
-						onPress={() => setShowCreateModal(true)}
-						className='bg-primary w-10 h-10 rounded-full items-center justify-center'
-					>
-						<Feather name='plus' size={20} color='white' />
-					</TouchableOpacity>
+					{isCourier ? (
+						<TouchableOpacity
+							onPress={() => router.push('/app/profile/profile')}
+							className='bg-primary w-10 h-10 rounded-full items-center justify-center'
+						>
+							<Feather name='settings' size={20} color='white' />
+						</TouchableOpacity>
+					) : (
+						<TouchableOpacity
+							onPress={() => setShowCreateModal(true)}
+							className='bg-primary w-10 h-10 rounded-full items-center justify-center'
+						>
+							<Feather name='plus' size={20} color='white' />
+						</TouchableOpacity>
+					)}
 				</View>
 
 				{/* Filter Tabs */}
@@ -176,6 +232,8 @@ const Deliveries: FC<Props> = () => {
 									key={delivery.id}
 									delivery={delivery}
 									onPress={() => handleDeliveryPress(delivery)}
+									onDelete={!isCourier ? handleDeleteDelivery : undefined}
+									isManager={!isCourier}
 								/>
 							))
 						) : (
@@ -199,7 +257,7 @@ const Deliveries: FC<Props> = () => {
 				presentationStyle='pageSheet'
 			>
 				<CreateDeliveryTask
-					couriers={MOCK_COURIERS}
+					couriers={couriers.map(c => ({ id: c.id, name: c.name }))}
 				/>
 				<View className='absolute top-12 right-4 z-10'>
 					<TouchableOpacity
@@ -221,7 +279,9 @@ const Deliveries: FC<Props> = () => {
 					<CourierDeliveryReport
 						task={selectedDelivery}
 						onReportSubmitted={() => {
-							fetchDeliveries() // Обновляем список при любом изменении статуса
+							// Фоновый рефетч без показа лоадера
+							fetchDeliveries()
+							setSelectedDelivery(null)
 						}}
 					/>
 				)}
@@ -229,7 +289,8 @@ const Deliveries: FC<Props> = () => {
 					<TouchableOpacity
 						onPress={() => {
 							setSelectedDelivery(null)
-							fetchDeliveries() // Обновляем данные при закрытии модала
+							// Фоновый рефетч
+							fetchDeliveries()
 						}}
 						className='bg-gray-600 w-8 h-8 rounded-full items-center justify-center'
 					>

@@ -3,7 +3,7 @@ import { Colors } from '@/shared/constants/Colors'
 import { TypeFeatherIconNames } from '@/shared/types/icon.types'
 import { Feather } from '@expo/vector-icons'
 import { Redirect, Tabs } from 'expo-router'
-import { Text } from 'react-native'
+import { ActivityIndicator, Text, View } from 'react-native'
 
 export const unstable_settings = {
 	initialRouteName: 'Monitoring',
@@ -32,11 +32,22 @@ const getLabelOptions = (iconName: TypeFeatherIconNames) => {
 }
 
 export default function AppLayout() {
-	const { user } = useAuth()
+	const { user, userProfile, isLoading } = useAuth()
 
 	if (!user) {
 		return <Redirect href='/auth' /> 
 	}
+
+	// Показываем загрузку пока профиль не загружен
+	if (isLoading || !userProfile) {
+		return (
+			<View className='flex-1 items-center justify-center' style={{ backgroundColor: Colors.black }}>
+				<ActivityIndicator size='large' color={Colors.primary} />
+			</View>
+		)
+	}
+
+	const isCourier = userProfile.role === 'courier'
 
 	return (
 		<Tabs
@@ -51,7 +62,8 @@ export default function AppLayout() {
 				},
 				sceneStyle: {
 					backgroundColor: Colors.black
-				}
+				},
+				unmountOnBlur: true
 			}}
 		>
 			<Tabs.Screen
@@ -61,21 +73,35 @@ export default function AppLayout() {
 					tabBarLabelStyle: {
 						color: Colors.primary
 					},
-					...getLabelOptions('monitor')
+					...getLabelOptions('monitor'),
+					href: isCourier ? null : undefined
 				}}
 			/>
 			<Tabs.Screen
 				name='documents'
 				options={{
 					title: 'Документы',
-					...getLabelOptions('inbox')
+					...getLabelOptions('inbox'),
+					href: isCourier ? null : undefined
 				}}
 			/>
 			<Tabs.Screen
 				name='products'
 				options={{
 					title: 'Товары',
-					...getLabelOptions('shopping-cart')
+					...getLabelOptions('shopping-cart'),
+					href: isCourier ? null : undefined
+				}}
+			/>
+			<Tabs.Screen
+				name='income'
+				options={{
+					title: 'Доход',
+					...getLabelOptions('dollar-sign'),
+					href: !isCourier ? null : undefined,
+					sceneStyle: {
+						backgroundColor: Colors.black
+					}
 				}}
 			/>
 			<Tabs.Screen
@@ -89,7 +115,8 @@ export default function AppLayout() {
 				name='agents'
 				options={{
 					title: 'Клиенты',
-					...getLabelOptions('user')
+					...getLabelOptions('user'),
+					href: isCourier ? null : undefined
 				}}
 			/>
 		</Tabs>

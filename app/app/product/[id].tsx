@@ -109,17 +109,6 @@ const ProductDetail: FC<Props> = () => {
 			{/* Actions */}
 			<View className='gap-3 mt-6'>
 				<TouchableOpacity
-					onPress={() => router.push({
-						pathname: '/app/(QuickSale)/modal',
-						params: { product: JSON.stringify(product) }
-					})}
-					className='bg-primary p-4 rounded-lg flex-row items-center justify-center'
-				>
-					<Feather name='shopping-cart' size={20} color='white' />
-					<Text className='text-white font-bold text-lg ml-2'>Продать товар</Text>
-				</TouchableOpacity>
-
-				<TouchableOpacity
 					onPress={() => {
 						// TODO: Открыть форму редактирования товара
 						alert('Функция редактирования будет добавлена позже')

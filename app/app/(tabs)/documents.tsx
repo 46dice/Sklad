@@ -105,7 +105,7 @@ const Documents: FC<Props> = () => {
 					{activeFilter === 'invoices' && (
 						<TouchableOpacity
 							onPress={() => router.push('/app/(Contracts)/invoice')}
-							className='bg-blue-600 w-10 h-10 rounded-full items-center justify-center'
+							className='bg-primary w-10 h-10 rounded-full items-center justify-center'
 						>
 							<Feather name='file-text' size={20} color='white' />
 						</TouchableOpacity>

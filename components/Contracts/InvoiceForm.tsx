@@ -67,10 +67,6 @@ export const InvoiceForm: FC<Props> = ({ onSubmit, clients }) => {
 				className='flex-1 bg-black'
 				contentContainerStyle={{ padding: 16 }}
 			>
-				<Text className='text-white text-2xl font-bold mb-4'>
-					Новый счет
-				</Text>
-
 				{/* Client Selection */}
 				<View className='mb-4'>
 					<Text className='text-gray-300 text-sm font-medium mb-2'>

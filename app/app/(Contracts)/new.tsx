@@ -58,6 +58,7 @@ const NewShipmentModal: FC = () => {
 		<View className='flex-1 bg-black'>
 			<ShipmentForm
 				onSubmit={handleCreateShipment}
+				onBack={() => router.back()}
 				clients={clientsForSelect}
 				services={servicesFromProducts}
 			/>

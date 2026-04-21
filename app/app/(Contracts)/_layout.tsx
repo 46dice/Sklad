@@ -8,7 +8,7 @@ const ContractsLayout = () => {
 	return (
 		<Stack
 			screenOptions={{
-				headerShown: true,
+				headerShown: false,
 				headerStyle: {
 					backgroundColor: Colors.black
 				},
@@ -24,7 +24,7 @@ const ContractsLayout = () => {
 			<Stack.Screen
 				name='new'
 				options={{
-					title: 'Новый договор',
+					title: 'Новый акт',
 					headerRight: () => (
 						<Text
 							style={{
@@ -45,13 +45,43 @@ const ContractsLayout = () => {
 			<Stack.Screen
 				name='edit/[id]'
 				options={{
-					title: 'Редактировать акт'
+					title: 'Редактировать акт',
+					headerRight: () => (
+						<Text
+							style={{
+								color: Platform.select({
+									ios: '#007AFF',
+									android: '#2196F3'
+								}),
+								fontSize: 17,
+								fontWeight: '600'
+							}}
+							onPress={() => router.back()}
+						>
+							Закрыть
+						</Text>
+					)
 				}}
 			/>
 			<Stack.Screen
 				name='view/[id]'
 				options={{
-					headerShown: false
+					headerShown: false,
+					headerRight: () => (
+						<Text
+							style={{
+								color: Platform.select({
+									ios: '#007AFF',
+									android: '#2196F3'
+								}),
+								fontSize: 17,
+								fontWeight: '600'
+							}}
+							onPress={() => router.back()}
+						>
+							Закрыть
+						</Text>
+					)
 				}}
 			/>
 		</Stack>

@@ -202,9 +202,6 @@ const generateInvoiceHTML = (invoice: IInvoice, supplierInfo: ISupplierInfo): st
 			</div>
 
 			<!-- ПРИЛОЖЕННЫЕ АКТЫ -->
-			<div class="page-break">
-				<h3>Приложение: Акты отгрузки</h3>
-			</div>
 		</body>
 		</html>
 	`
@@ -218,14 +215,14 @@ export const exportInvoiceToPDF = async (
 	try {
 		const invoiceHTML = generateInvoiceHTML(invoice, supplierInfo)
 
-		// Генерируем HTML для каждого акта
+		// Генерируем HTML для каждого акта - каждый на отдельной странице
 		let shipmentsHTML = ''
-		shipments.forEach((shipment, idx) => {
+		shipments.forEach((shipment) => {
 			const actDate = new Date(shipment.actDate).toLocaleDateString('ru-RU')
 			const itemsHTML = shipment.items
 				.map(
-					(item, itemIdx) => `
-				<tr>
+					(item, itemIdx) => {
+						return `<tr>
 					<td style="border: 1px solid #000; padding: 8px; text-align: center;">${itemIdx + 1}</td>
 					<td style="border: 1px solid #000; padding: 8px;">${item.serviceName}</td>
 					<td style="border: 1px solid #000; padding: 8px; text-align: right;">${item.price.toFixed(2)}</td>
@@ -234,43 +231,68 @@ export const exportInvoiceToPDF = async (
 					<td style="border: 1px solid #000; padding: 8px; text-align: right;">0,00</td>
 					<td style="border: 1px solid #000; padding: 8px; text-align: right;">0,00</td>
 					<td style="border: 1px solid #000; padding: 8px; text-align: right;">${item.totalAmount.toFixed(2)}</td>
-				</tr>
-			`
+				</tr>`
+					}
 				)
 				.join('')
 
 			const totalAmount = shipment.items.reduce((sum, item) => sum + item.totalAmount, 0)
 
-			shipmentsHTML += `
-				<div style="page-break-after: always; margin-bottom: 40px;">
-					<h3>${shipment.actNumber} от ${actDate}</h3>
-					<div style="margin-bottom: 15px;">
-						<div><strong>Исполнитель:</strong> ${supplierInfo.name}</div>
-						<div><strong>Заказчик:</strong> ${shipment.clientName}</div>
-					</div>
-					<table style="width: 100%; border-collapse: collapse; margin-bottom: 10px;">
-						<thead>
-							<tr style="background-color: #f0f0f0;">
-								<td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold;">№</td>
-								<td style="border: 1px solid #000; padding: 8px; font-weight: bold;">Наименование</td>
-								<td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold;">Цена</td>
-								<td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold;">Кол-во</td>
-								<td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold;">Ед.</td>
-								<td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold;">Без НДС</td>
-								<td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold;">НДС</td>
-								<td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold;">Сумма</td>
-							</tr>
-						</thead>
-						<tbody>
-							${itemsHTML}
-							<tr>
-								<td colspan="7" style="border: 1px solid #000; padding: 8px; text-align: right; font-weight: bold;">Итого:</td>
-								<td style="border: 1px solid #000; padding: 8px; text-align: right; font-weight: bold;">${totalAmount.toFixed(2)}</td>
-							</tr>
-						</tbody>
-					</table>
+			shipmentsHTML += `<div style="page-break-before: always; padding: 20px 0;">
+				<h3 style="text-align: center; margin-bottom: 20px;">${shipment.actNumber} от ${actDate}</h3>
+				<div style="margin-bottom: 15px;">
+					<div><strong>Исполнитель:</strong> ${supplierInfo.name}</div>
+					<div>ИНН: ${supplierInfo.inn}</div>
+					<div>р/с ${supplierInfo.accountNumber}</div>
+					<div>в ${supplierInfo.bankName} г Москва</div>
+					<div>БИК ${supplierInfo.bik}</div>
+					<div>корр/с ${supplierInfo.correspondentAccount}</div>
+					<div>${supplierInfo.address}</div>
 				</div>
-			`
+				<div style="margin-bottom: 15px;">
+					<div><strong>Заказчик:</strong> ${shipment.clientName}</div>
+					<div>ИНН: ${shipment.clientInn}</div>
+					<div>${shipment.clientAddress}</div>
+				</div>
+				<table style="width: 100%; border-collapse: collapse; margin-bottom: 10px;">
+					<thead>
+						<tr style="background-color: #f0f0f0;">
+							<td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold;">№</td>
+							<td style="border: 1px solid #000; padding: 8px; font-weight: bold;">Наименование работы (услуги)</td>
+							<td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold;">Цена</td>
+							<td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold;">Кол-во</td>
+							<td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold;">Ед. изм.</td>
+							<td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold;">Без НДС</td>
+							<td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold;">НДС</td>
+							<td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold;">Сумма</td>
+						</tr>
+					</thead>
+					<tbody>
+						${itemsHTML}
+						<tr>
+							<td colspan="7" style="border: 1px solid #000; padding: 8px; text-align: right; font-weight: bold;">Итого:</td>
+							<td style="border: 1px solid #000; padding: 8px; text-align: right; font-weight: bold;">${totalAmount.toFixed(2)}</td>
+						</tr>
+					</tbody>
+				</table>
+				<div style="margin-top: 40px;">
+					<div>Вышеперечисленные услуги выполнены полностью и в срок. Заказчик претензий по объёму, качеству и срокам оказания услуг не имеет.</div>
+				</div>
+				<div style="margin-top: 40px;">
+					<div style="display: flex; justify-content: space-between;">
+						<div>
+							<div>Исполнитель: _______________</div>
+							<div style="margin-top: 20px;">подпись</div>
+							<div style="margin-top: 10px;">М.П.</div>
+						</div>
+						<div>
+							<div>Заказчик: _______________</div>
+							<div style="margin-top: 20px;">подпись</div>
+							<div style="margin-top: 10px;">М.П.</div>
+						</div>
+					</div>
+				</div>
+			</div>`
 		})
 
 		const fullHTML = invoiceHTML.replace('<!-- ПРИЛОЖЕННЫЕ АКТЫ -->', shipmentsHTML)

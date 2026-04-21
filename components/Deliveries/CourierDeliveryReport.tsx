@@ -142,13 +142,13 @@ export const CourierDeliveryReport: FC<Props> = ({ task, onReportSubmitted }) =>
 			</View>
 
 			{/* Заметки менеджера */}
-			{task.notes && (
+			{task.managerNotes && (
 				<View className='bg-gray-default rounded-lg p-4 mb-4'>
 					<View className='flex-row items-center mb-2'>
 						<Feather name='message-square' size={18} color='#BF3335' />
 						<Text className='text-white font-semibold ml-2'>Заметки менеджера</Text>
 					</View>
-					<Text className='text-gray-300 text-sm'>{task.notes}</Text>
+					<Text className='text-gray-300 text-sm'>{task.managerNotes}</Text>
 				</View>
 			)}
 

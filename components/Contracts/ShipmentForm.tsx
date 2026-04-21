@@ -2,18 +2,19 @@ import { INewShipmentForm, IShipmentItem } from '@/shared/types/shipment.types'
 import { Feather } from '@expo/vector-icons'
 import { FC, useState } from 'react'
 import {
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+	KeyboardAvoidingView,
+	Platform,
+	ScrollView,
+	Text,
+	TextInput,
+	TouchableOpacity,
+	View
 } from 'react-native'
 
 type Props = {
 	initialData?: INewShipmentForm
 	onSubmit: (data: INewShipmentForm) => void
+	onBack?: () => void
 	clients: { id: string; name: string; inn: string; address: string }[]
 	services: { id: string; name: string; price: number }[]
 }
@@ -28,6 +29,7 @@ interface SelectedService {
 export const ShipmentForm: FC<Props> = ({
 	initialData,
 	onSubmit,
+	onBack,
 	clients,
 	services
 }) => {
@@ -132,13 +134,23 @@ export const ShipmentForm: FC<Props> = ({
 			behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
 			className='flex-1'
 		>
+			{/* Header with Back Button */}
+			<View className='flex-row items-center px-4 pt-4 pb-2 bg-black border-b border-gray-800'>
+				{onBack && (
+					<TouchableOpacity onPress={onBack} className='mr-3'>
+						<Feather name='arrow-left' size={24} color='white' />
+					</TouchableOpacity>
+				)}
+				<Text className='text-white text-2xl font-bold'>
+					{initialData ? 'Редактировать акт' : 'Новый акт отгрузки'}
+				</Text>
+			</View>
+
 			<ScrollView
 				className='flex-1 bg-black'
 				contentContainerStyle={{ padding: 16 }}
 			>
-				<Text className='text-white text-2xl font-bold mb-4'>
-					{initialData ? 'Редактировать акт' : 'Новый акт отгрузки'}
-				</Text>
+				<View className='gap-4'>
 
 				{/* Client Selection */}
 				<View className='mb-4'>
@@ -338,6 +350,7 @@ export const ShipmentForm: FC<Props> = ({
 						{initialData ? 'Сохранить' : 'Создать акт'}
 					</Text>
 				</TouchableOpacity>
+				</View>
 			</ScrollView>
 		</KeyboardAvoidingView>
 	)
