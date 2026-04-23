@@ -1,20 +1,55 @@
 import { useAuth } from '@/hooks/useAuth'
 import { useDeliveries } from '@/hooks/useDeliveries'
+import { getDeliveryRate } from '@/shared/types/courier.types'
 import { Feather } from '@expo/vector-icons'
 import { useFocusEffect } from '@react-navigation/native'
 import { FC, useCallback, useMemo, useState } from 'react'
 import {
-    Dimensions,
-    Pressable,
-    ScrollView,
-    Text,
-    View
+	Dimensions,
+	Pressable,
+	ScrollView,
+	Text,
+	View
 } from 'react-native'
 import { LineChart } from 'react-native-chart-kit'
 
 type Props = Record<string, never>
 
 type FilterPeriod = 'week' | 'month' | 'year'
+
+// Функция для определения адреса по названию услуги
+const getAddressByServiceName = (serviceName: string): string => {
+	const lowerName = serviceName.toLowerCase()
+	
+	if (lowerName.includes('озон')) {
+		return 'Озон, ул. Челюскинцев, 88'
+	}
+	if (lowerName.includes('wildberries') || lowerName.includes('вб') || lowerName.includes('wb')) {
+		return 'Wildberries, ул. Машиностроителей, 32'
+	}
+	if (lowerName.includes('яндекс') || lowerName.includes('яндекс.маркет')) {
+		return 'Яндекс.Маркет, ул. Авторская, 15'
+	}
+	if (lowerName.includes('пэк') || lowerName.includes('cdek') || lowerName.includes('деловые') || lowerName.includes('энергия')) {
+		return 'Крупногабарит с транспортной компании'
+	}
+	
+	return 'Озон, ул. Челюскинцев, 88'
+}
+
+// Функция для расчёта зарплаты курьера за доставку
+const calculateCourierEarnings = (delivery: any): number => {
+	let totalEarnings = 0
+	
+	delivery.items.forEach((item: any) => {
+		const itemAddress = getAddressByServiceName(item.productName)
+		const rate = getDeliveryRate(itemAddress)
+		// Зарплата = тариф × количество товаров
+		totalEarnings += rate * item.quantity
+	})
+	
+	return totalEarnings
+}
 
 const IncomeScreen: FC<Props> = () => {
 	const { user } = useAuth()
@@ -39,7 +74,7 @@ const IncomeScreen: FC<Props> = () => {
 		const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
 
 		return courierDeliveries.filter(delivery => {
-			const deliveryDate = new Date(delivery.completedAt || delivery.createdAt)
+			const deliveryDate = new Date(delivery.deliveredAt || delivery.createdAt)
 			const deliveryDay = new Date(deliveryDate.getFullYear(), deliveryDate.getMonth(), deliveryDate.getDate())
 
 			switch (filterPeriod) {
@@ -61,7 +96,7 @@ const IncomeScreen: FC<Props> = () => {
 
 	// Получаем статистику
 	const stats = useMemo(() => {
-		const totalIncome = filteredDeliveries.reduce((sum, delivery) => sum + delivery.totalCost, 0)
+		const totalIncome = filteredDeliveries.reduce((sum, delivery) => sum + calculateCourierEarnings(delivery), 0)
 		const totalDeliveries = filteredDeliveries.length
 
 		return {
@@ -84,10 +119,10 @@ const IncomeScreen: FC<Props> = () => {
 				date.setDate(today.getDate() - i)
 				labels.push(date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'numeric' }))
 				const dayDeliveries = filteredDeliveries.filter(d => {
-					const dDate = new Date(d.completedAt || d.createdAt)
+					const dDate = new Date(d.deliveredAt || d.createdAt)
 					return dDate.toDateString() === date.toDateString()
 				})
-				const amount = dayDeliveries.reduce((sum, d) => sum + d.totalCost, 0)
+				const amount = dayDeliveries.reduce((sum, d) => sum + calculateCourierEarnings(d), 0)
 				data.push(amount)
 			}
 		} else if (filterPeriod === 'month') {
@@ -108,10 +143,10 @@ const IncomeScreen: FC<Props> = () => {
 				weekLabels.push(weekEnd.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' }))
 				
 				const weekDeliveries = filteredDeliveries.filter(d => {
-					const dDate = new Date(d.completedAt || d.createdAt)
+					const dDate = new Date(d.deliveredAt || d.createdAt)
 					return dDate >= weekStart && dDate <= weekEnd
 				})
-				const amount = weekDeliveries.reduce((sum, d) => sum + d.totalCost, 0)
+				const amount = weekDeliveries.reduce((sum, d) => sum + calculateCourierEarnings(d), 0)
 				weekData.push(amount)
 			}
 			labels.push(...weekLabels)
@@ -127,10 +162,10 @@ const IncomeScreen: FC<Props> = () => {
 				for (let m = 0; m < 2; m++) {
 					const monthDate = new Date(now.getFullYear(), now.getMonth() - i + m, 1)
 					const monthDeliveries = filteredDeliveries.filter(d => {
-						const dDate = new Date(d.completedAt || d.createdAt)
+						const dDate = new Date(d.deliveredAt || d.createdAt)
 						return dDate.getMonth() === monthDate.getMonth() && dDate.getFullYear() === monthDate.getFullYear()
 					})
-					amount += monthDeliveries.reduce((sum, d) => sum + d.totalCost, 0)
+					amount += monthDeliveries.reduce((sum, d) => sum + calculateCourierEarnings(d), 0)
 				}
 				data.push(amount)
 			}

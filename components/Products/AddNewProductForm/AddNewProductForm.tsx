@@ -84,7 +84,7 @@ export default function AddNewProductForm() {
 			<FormInput<INewProductForm>
 				name='quantity'
 				control={control}
-				placeholder='Количество на складе'
+				placeholder='Количество'
 				keyboardType='numeric'
 				rules={{
 					required: 'Количество обязательно!',

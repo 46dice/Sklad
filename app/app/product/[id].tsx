@@ -62,38 +62,6 @@ const ProductDetail: FC<Props> = () => {
 					</View>
 				</View>
 
-				{/* Stock Status */}
-				<View className='flex-row items-center justify-between p-3 rounded-lg bg-gray-600'>
-					<View className='flex-row items-center'>
-						<Feather 
-							name='package' 
-							size={20} 
-							color={isLowStock ? '#EF4444' : '#10B981'} 
-						/>
-						<Text className='text-white font-semibold ml-2'>Остаток на складе</Text>
-					</View>
-					<View className='flex-row items-center'>
-						<Text 
-							className={`text-2xl font-bold ${isLowStock ? 'text-red-400' : 'text-green-400'}`}
-						>
-							{product.quantity}
-						</Text>
-						<Text className='text-gray-400 ml-1'>шт</Text>
-					</View>
-				</View>
-
-				{isLowStock && (
-					<View className='bg-red-600/20 rounded-lg p-3 border border-red-600/30 mt-3'>
-						<View className='flex-row items-center gap-2'>
-							<Feather name='alert-triangle' size={18} color='#EF4444' />
-							<Text className='text-red-400 font-semibold'>Низкий остаток</Text>
-						</View>
-						<Text className='text-red-300 text-sm mt-1'>
-							Рекомендуется пополнить запас товара
-						</Text>
-					</View>
-				)}
-
 				{/* Description */}
 				{product.description && (
 					<View className='mt-4'>

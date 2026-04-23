@@ -79,15 +79,14 @@ export const ProductMovements: FC<Props> = ({ productId, productName }) => {
 				</Text>
 			</View>
 
-			<ScrollView className='max-h-64' showsVerticalScrollIndicator={false}>
+			<ScrollView className='max-h-150' showsVerticalScrollIndicator={false}>
 				{productMovements.map((movement, idx) => (
 					<View 
 						key={movement.id} 
 						className={`flex-row items-center py-3 ${idx < productMovements.length - 1 ? 'border-b border-gray-600' : ''}`}
 					>
 						<View 
-							className='w-8 h-8 rounded-full items-center justify-center mr-3'
-							style={{ backgroundColor: getMovementTypeColor(movement.movementType) + '20' }}
+							className='w-8 h-8 rounded-full items-center justify-center'
 						>
 							<Feather 
 								name={getMovementIcon(movement.movementType) as any} 
@@ -107,10 +106,6 @@ export const ProductMovements: FC<Props> = ({ productId, productName }) => {
 									{movement.quantity > 0 ? '+' : ''}{movement.quantity}
 								</Text>
 							</View>
-							
-							<Text className='text-gray-400 text-xs mb-1'>
-								{movement.previousQuantity} → {movement.newQuantity} шт
-							</Text>
 							
 							{movement.reason && (
 								<Text className='text-gray-500 text-xs' numberOfLines={1}>

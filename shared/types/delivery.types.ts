@@ -20,6 +20,7 @@ export interface IDeliveryTask {
 	destination: DeliveryDestination
 	customDestination?: string // если destination = 'custom'
 	destinationAddress: string
+	destinationAddresses?: string[] // все адреса доставки если их несколько
 	items: IDeliveryItem[]
 	totalCost: number // общая стоимость доставки
 	status: DeliveryStatus
@@ -37,6 +38,7 @@ export interface INewDeliveryForm {
 	destination: DeliveryDestination
 	customDestination?: string
 	destinationAddress: string
+	destinationAddresses?: string[] // все адреса доставки если их несколько
 	items: IDeliveryItem[]
 	notes?: string
 }

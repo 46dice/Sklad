@@ -2,28 +2,36 @@ import { INewInvoiceForm } from '@/shared/types/invoice.types'
 import { Feather } from '@expo/vector-icons'
 import { FC, useState } from 'react'
 import {
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+	KeyboardAvoidingView,
+	Platform,
+	ScrollView,
+	Text,
+	TextInput,
+	TouchableOpacity,
+	View
 } from 'react-native'
 
 type Props = {
 	onSubmit: (data: INewInvoiceForm) => void
 	clients: { id: string; name: string; inn: string; address: string }[]
+	initialPeriodFrom?: string
+	initialPeriodTo?: string
+	onPeriodsChange?: (from: string, to: string) => void
+	initialClientId?: string
+	initialClientName?: string
+	initialClientInn?: string
+	initialClientAddress?: string
+	onClientChange?: (clientId: string, clientName: string, clientInn: string, clientAddress: string) => void
 }
 
-export const InvoiceForm: FC<Props> = ({ onSubmit, clients }) => {
+export const InvoiceForm: FC<Props> = ({ onSubmit, clients, initialPeriodFrom, initialPeriodTo, onPeriodsChange, initialClientId, initialClientName, initialClientInn, initialClientAddress, onClientChange }) => {
 	const [formData, setFormData] = useState<INewInvoiceForm>({
-		clientId: '',
-		clientName: '',
-		clientInn: '',
-		clientAddress: '',
-		periodFrom: new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split('T')[0],
-		periodTo: new Date().toISOString().split('T')[0],
+		clientId: initialClientId || '',
+		clientName: initialClientName || '',
+		clientInn: initialClientInn || '',
+		clientAddress: initialClientAddress || '',
+		periodFrom: initialPeriodFrom || new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split('T')[0],
+		periodTo: initialPeriodTo || new Date().toISOString().split('T')[0],
 		notes: ''
 	})
 
@@ -42,6 +50,8 @@ export const InvoiceForm: FC<Props> = ({ onSubmit, clients }) => {
 		handleChange('clientInn', inn)
 		handleChange('clientAddress', address)
 		setShowClientDropdown(false)
+		// Сохраняем контрагента
+		onClientChange?.(clientId, clientName, inn, address)
 	}
 
 	const handleSubmit = () => {
@@ -54,6 +64,9 @@ export const InvoiceForm: FC<Props> = ({ onSubmit, clients }) => {
 			alert('Дата начала не может быть позже даты конца')
 			return
 		}
+
+		// Сохраняем периоды
+		onPeriodsChange?.(formData.periodFrom, formData.periodTo)
 
 		onSubmit(formData)
 	}

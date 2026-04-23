@@ -344,7 +344,6 @@ export default function Profile() {
 
 					<Button
 						className='w-full'
-						variant='ghost'
 						onPress={() => {
 							setIsEditing(false)
 							reset(initialData || undefined)

@@ -62,8 +62,7 @@ export default function AppLayout() {
 				},
 				sceneStyle: {
 					backgroundColor: Colors.black
-				},
-				unmountOnBlur: true
+				}
 			}}
 		>
 			<Tabs.Screen
@@ -88,7 +87,7 @@ export default function AppLayout() {
 			<Tabs.Screen
 				name='products'
 				options={{
-					title: 'Товары',
+					title: 'Услуги',
 					...getLabelOptions('shopping-cart'),
 					href: isCourier ? null : undefined
 				}}

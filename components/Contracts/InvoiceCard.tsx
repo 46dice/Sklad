@@ -30,9 +30,6 @@ export const InvoiceCard = ({
 					<Text className='text-gray-400 text-sm mt-1'>{invoice.clientName}</Text>
 					<Text className='text-gray-500 text-xs mt-1'>ИНН: {invoice.clientInn}</Text>
 				</View>
-				<View className={`${statusColor} rounded-full px-3 py-1`}>
-					<Text className='text-white text-xs font-semibold'>{statusLabel}</Text>
-				</View>
 			</View>
 
 			<View className='flex-row items-center justify-between mb-3 pt-2 border-t border-gray-600'>

@@ -12,8 +12,18 @@ const NewInvoiceModal: FC = () => {
 	const { clients, isLoading: clientsLoading } = useClients()
 	const { saveInvoice } = useInvoices()
 	const [isProcessing, setIsProcessing] = useState(false)
+	const [invoicePeriodFrom, setInvoicePeriodFrom] = useState<string>(
+		new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split('T')[0]
+	)
+	const [invoicePeriodTo, setInvoicePeriodTo] = useState<string>(
+		new Date().toISOString().split('T')[0]
+	)
+	const [invoiceClientId, setInvoiceClientId] = useState<string>('')
+	const [invoiceClientName, setInvoiceClientName] = useState<string>('')
+	const [invoiceClientInn, setInvoiceClientInn] = useState<string>('')
+	const [invoiceClientAddress, setInvoiceClientAddress] = useState<string>('')
 
-	const clientsForSelect = clients.map(client => ({
+	const clientsForSelect = clients.map((client: any) => ({
 		id: client.id,
 		name: client.name,
 		inn: client.inn || '',
@@ -62,6 +72,22 @@ const NewInvoiceModal: FC = () => {
 			<InvoiceForm
 				onSubmit={handleCreateInvoice}
 				clients={clientsForSelect}
+				initialPeriodFrom={invoicePeriodFrom}
+				initialPeriodTo={invoicePeriodTo}
+				onPeriodsChange={(from, to) => {
+					setInvoicePeriodFrom(from)
+					setInvoicePeriodTo(to)
+				}}
+				initialClientId={invoiceClientId}
+				initialClientName={invoiceClientName}
+				initialClientInn={invoiceClientInn}
+				initialClientAddress={invoiceClientAddress}
+				onClientChange={(clientId, clientName, clientInn, clientAddress) => {
+					setInvoiceClientId(clientId)
+					setInvoiceClientName(clientName)
+					setInvoiceClientInn(clientInn)
+					setInvoiceClientAddress(clientAddress)
+				}}
 			/>
 		</View>
 	)

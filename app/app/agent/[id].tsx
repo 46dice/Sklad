@@ -179,7 +179,6 @@ export default function ClientDetail() {
 					<Button
 						onPress={() => router.back()}
 						className='flex-1'
-						variant='ghost'
 					>
 						<Text>Отмена</Text>
 					</Button>

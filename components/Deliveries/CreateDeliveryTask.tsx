@@ -1,5 +1,6 @@
 import { useProducts } from '@/components/Products/hooks/useProducts'
 import { useDeliveries } from '@/hooks/useDeliveries'
+import { DELIVERY_RATES } from '@/shared/types/courier.types'
 import { DeliveryDestination, IDeliveryItem, INewDeliveryForm } from '@/shared/types/delivery.types'
 import { Button } from '@/shared/ui/Button'
 import { Feather } from '@expo/vector-icons'
@@ -19,11 +20,13 @@ type Props = {
 	couriers: Array<{ id: string; name: string }>
 }
 
+// Генерируем DESTINATIONS из DELIVERY_RATES
 const DESTINATIONS: Array<{ value: DeliveryDestination; label: string; address: string }> = [
-	{ value: 'ozon', label: 'Ozon', address: 'Склад Ozon, ул. Складская 1' },
-	{ value: 'wildberries', label: 'Wildberries', address: 'Склад WB, ул. Логистическая 5' },
-	{ value: 'yandex_market', label: 'Яндекс.Маркет', address: 'Склад Яндекс, пр. Доставочный 10' },
-	{ value: 'custom', label: 'Другое', address: '' }
+	...Object.entries(DELIVERY_RATES).map(([address, rate], idx) => ({
+		value: `destination_${idx}` as DeliveryDestination,
+		label: address.split(',')[0], // Берём первую часть адреса как название
+		address
+	}))
 ]
 
 export const CreateDeliveryTask: FC<Props> = ({ couriers }) => {
@@ -42,7 +45,6 @@ export const CreateDeliveryTask: FC<Props> = ({ couriers }) => {
 	})
 
 	const [showCourierDropdown, setShowCourierDropdown] = useState(false)
-	const [showDestinationDropdown, setShowDestinationDropdown] = useState(false)
 	const [selectedProducts, setSelectedProducts] = useState<Array<{
 		id: string
 		name: string
@@ -55,20 +57,31 @@ export const CreateDeliveryTask: FC<Props> = ({ couriers }) => {
 		p.name.toLowerCase().includes('доставка')
 	)
 
+	// Функция для автоматического определения адреса по названию услуги
+	const getAddressByServiceName = (serviceName: string): string => {
+		const lowerName = serviceName.toLowerCase()
+		
+		// Проверяем ключевые слова для каждого маркетплейса
+		if (lowerName.includes('озон')) {
+			return 'Озон, ул. Челюскинцев, 88'
+		}
+		if (lowerName.includes('wildberries') || lowerName.includes('вб') || lowerName.includes('wb')) {
+			return 'Wildberries, ул. Машиностроителей, 32'
+		}
+		if (lowerName.includes('яндекс') || lowerName.includes('яндекс.маркет')) {
+			return 'Яндекс.Маркет, ул. Авторская, 15'
+		}
+		if (lowerName.includes('пэк') || lowerName.includes('cdek') || lowerName.includes('деловые') || lowerName.includes('энергия')) {
+			return 'Крупногабарит с транспортной компании'
+		}
+		
+		// По умолчанию первый адрес
+		return Object.keys(DELIVERY_RATES)[0]
+	}
+
 	const handleSelectCourier = (courierId: string, courierName: string) => {
 		setFormData(prev => ({ ...prev, courierId, courierName }))
 		setShowCourierDropdown(false)
-	}
-
-	const handleSelectDestination = (destination: DeliveryDestination) => {
-		const destInfo = DESTINATIONS.find(d => d.value === destination)
-		setFormData(prev => ({
-			...prev,
-			destination,
-			destinationAddress: destInfo?.address || '',
-			customDestination: destination === 'custom' ? '' : undefined
-		}))
-		setShowDestinationDropdown(false)
 	}
 
 	const handleProductQuantityChange = (productId: string, quantity: number, deliveryCost: number) => {
@@ -79,6 +92,17 @@ export const CreateDeliveryTask: FC<Props> = ({ couriers }) => {
 			if (product) {
 				setSelectedProducts(prev => {
 					const existing = prev.find(p => p.id === productId)
+					const isFirstProduct = prev.length === 0
+					
+					// Если это первый товар, автоматически выбираем адрес по названию услуги
+					if (isFirstProduct && quantity > 0) {
+						const autoAddress = getAddressByServiceName(product.name)
+						setFormData(prevForm => ({
+							...prevForm,
+							destinationAddress: autoAddress
+						}))
+					}
+					
 					if (existing) {
 						return prev.map(p => 
 							p.id === productId 
@@ -103,11 +127,6 @@ export const CreateDeliveryTask: FC<Props> = ({ couriers }) => {
 			return
 		}
 
-		if (formData.destination === 'custom' && !formData.customDestination) {
-			alert('Укажите адрес доставки')
-			return
-		}
-
 		setIsLoading(true)
 
 		const items: IDeliveryItem[] = selectedProducts.map(p => ({
@@ -122,10 +141,8 @@ export const CreateDeliveryTask: FC<Props> = ({ couriers }) => {
 			courierId: formData.courierId,
 			courierName: formData.courierName,
 			destination: formData.destination,
-			customDestination: formData.customDestination || undefined,
-			destinationAddress: formData.destination === 'custom' 
-				? (formData.customDestination || formData.destinationAddress)
-				: formData.destinationAddress,
+			destinationAddress: formData.destinationAddress,
+			destinationAddresses: uniqueAddresses, // Сохраняем все адреса
 			items,
 			notes: formData.notes || undefined
 		})
@@ -138,6 +155,18 @@ export const CreateDeliveryTask: FC<Props> = ({ couriers }) => {
 	}
 
 	const totalCost = selectedProducts.reduce((sum, p) => sum + (p.quantity * p.deliveryCost), 0)
+
+	// Получаем уникальные адреса доставки из выбранных товаров
+	const getUniqueAddresses = (): string[] => {
+		const addresses = new Set<string>()
+		selectedProducts.forEach(product => {
+			const address = getAddressByServiceName(product.name)
+			addresses.add(address)
+		})
+		return Array.from(addresses)
+	}
+
+	const uniqueAddresses = getUniqueAddresses()
 
 	return (
 		<KeyboardAvoidingView
@@ -175,57 +204,24 @@ export const CreateDeliveryTask: FC<Props> = ({ couriers }) => {
 					)}
 				</View>
 
-				{/* Выбор места доставки */}
-				<View className='mb-4'>
-					<Text className='text-gray-300 text-sm font-medium mb-2'>Место доставки *</Text>
-					<TouchableOpacity
-						onPress={() => setShowDestinationDropdown(!showDestinationDropdown)}
-						className='bg-gray-default p-3 rounded-lg flex-row items-center justify-between'
-					>
-						<Text className='text-white text-base'>
-							{DESTINATIONS.find(d => d.value === formData.destination)?.label}
-						</Text>
-						<Feather name={showDestinationDropdown ? 'chevron-up' : 'chevron-down'} size={20} color='#666' />
-					</TouchableOpacity>
-
-					{showDestinationDropdown && (
-						<View className='bg-gray-default mt-1 rounded-lg overflow-hidden'>
-							{DESTINATIONS.map(dest => (
-								<TouchableOpacity
-									key={dest.value}
-									onPress={() => handleSelectDestination(dest.value)}
-									className='p-3 border-b border-gray-600'
-								>
-									<Text className='text-white font-medium'>{dest.label}</Text>
-									{dest.address && <Text className='text-gray-400 text-xs mt-1'>{dest.address}</Text>}
-								</TouchableOpacity>
+				{/* Адрес доставки */}
+				{selectedProducts.length > 0 && (
+					<View className='mb-4'>
+						<Text className='text-gray-300 text-sm font-medium mb-2'>Адреса доставки</Text>
+						<View className='bg-gray-default rounded-lg p-3'>
+							{uniqueAddresses.map((address, idx) => (
+								<View key={idx} className='flex-row items-start gap-2 pb-2 mb-2 border-b border-gray-600 last:border-b-0 last:mb-0 last:pb-0'>
+									<Feather name='map-pin' size={14} color='#BF3335' style={{ marginTop: 2 }} />
+									<Text className='text-white text-sm flex-1'>{address}</Text>
+								</View>
 							))}
 						</View>
-					)}
-				</View>
-
-				{/* Адрес доставки */}
-				<View className='mb-4'>
-					<Text className='text-gray-300 text-sm font-medium mb-2'>Адрес доставки</Text>
-					<TextInput
-						className='bg-gray-default text-white p-3 rounded-lg'
-						placeholder='Адрес склада'
-						placeholderTextColor='#666'
-						value={formData.destination === 'custom' ? formData.customDestination : formData.destinationAddress}
-						onChangeText={val => {
-							if (formData.destination === 'custom') {
-								setFormData(prev => ({ ...prev, customDestination: val }))
-							} else {
-								setFormData(prev => ({ ...prev, destinationAddress: val }))
-							}
-						}}
-						editable={formData.destination === 'custom'}
-					/>
-				</View>
+					</View>
+				)}
 
 				{/* Товары */}
 				<View className='mb-4'>
-					<Text className='text-gray-300 text-sm font-medium mb-2'>Товары для доставки *</Text>
+					<Text className='text-gray-300 text-sm font-medium mb-2'>Позиции *</Text>
 					<View className='bg-gray-default rounded-lg p-3'>
 						{deliveryProducts.length > 0 ? (
 							deliveryProducts.map(product => {
@@ -234,7 +230,6 @@ export const CreateDeliveryTask: FC<Props> = ({ couriers }) => {
 									<View key={product.id} className='flex-row items-center gap-2 pb-3 mb-3 border-b border-gray-600 last:border-b-0 last:mb-0 last:pb-0'>
 										<View className='flex-1'>
 											<Text className='text-white font-medium text-sm'>{product.name}</Text>
-											<Text className='text-gray-400 text-xs'>Остаток: {product.quantity} шт</Text>
 										</View>
 										<View className='flex-row items-center gap-2'>
 											<TouchableOpacity

@@ -1,6 +1,6 @@
 import { Feather } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
-import { Pressable } from 'react-native'
+import { TouchableOpacity } from 'react-native'
 import useProductStore from '../product.model'
 
 export default function AddNewProduct() {
@@ -13,8 +13,11 @@ export default function AddNewProduct() {
 	}
 
 	return (
-		<Pressable onPress={handlePress}>
-			<Feather size={24} color={'white'} name='plus' />
-		</Pressable>
+		<TouchableOpacity
+			onPress={handlePress}
+			className='bg-primary w-10 h-10 rounded-full items-center justify-center'
+		>
+			<Feather size={20} color='white' name='plus' />
+		</TouchableOpacity>
 	)
 }

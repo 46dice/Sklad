@@ -1,14 +1,19 @@
+import { db } from '@/firebase'
+import { useAuth } from '@/hooks/useAuth'
 import { useDeliveries } from '@/hooks/useDeliveries'
+import { getDeliveryRate } from '@/shared/types/courier.types'
 import { IDeliveryTask } from '@/shared/types/delivery.types'
+import { IUserProfile } from '@/shared/types/user.types'
 import { Button } from '@/shared/ui/Button'
 import { Feather } from '@expo/vector-icons'
-import { FC, useState } from 'react'
+import { doc, getDoc } from 'firebase/firestore/lite'
+import { FC, useEffect, useState } from 'react'
 import {
-    ScrollView,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+	ScrollView,
+	Text,
+	TextInput,
+	TouchableOpacity,
+	View
 } from 'react-native'
 
 type Props = {
@@ -36,11 +41,51 @@ const getStatusLabel = (status: string) => {
 	return labels[status] || status
 }
 
+// Функция для определения адреса по названию услуги
+const getAddressByServiceName = (serviceName: string): string => {
+	const lowerName = serviceName.toLowerCase()
+	
+	if (lowerName.includes('озон')) {
+		return 'Озон, ул. Челюскинцев, 88'
+	}
+	if (lowerName.includes('wildberries') || lowerName.includes('вб') || lowerName.includes('wb')) {
+		return 'Wildberries, ул. Машиностроителей, 32'
+	}
+	if (lowerName.includes('яндекс') || lowerName.includes('яндекс.маркет')) {
+		return 'Яндекс.Маркет, ул. Авторская, 15'
+	}
+	if (lowerName.includes('пэк') || lowerName.includes('cdek') || lowerName.includes('деловые') || lowerName.includes('энергия')) {
+		return 'Крупногабарит с транспортной компании'
+	}
+	
+	return 'Озон, ул. Челюскинцев, 88'
+}
+
 export const CourierDeliveryReport: FC<Props> = ({ task, onReportSubmitted }) => {
 	const { updateDeliveryStatus, submitDeliveryReport } = useDeliveries()
+	const { userProfile } = useAuth()
 	const [isLoading, setIsLoading] = useState(false)
 	const [reportNotes, setReportNotes] = useState('')
 	const [showReportForm, setShowReportForm] = useState(false)
+	const [courierProfile, setCourierProfile] = useState<IUserProfile | null>(null)
+
+	const isCourier = userProfile?.role === 'courier'
+
+	// Загружаем данные курьера
+	useEffect(() => {
+		const loadCourierProfile = async () => {
+			try {
+				const courierRef = doc(db, 'users', task.courierId, 'profile', 'data')
+				const courierSnap = await getDoc(courierRef)
+				if (courierSnap.exists()) {
+					setCourierProfile(courierSnap.data() as IUserProfile)
+				}
+			} catch (error) {
+				console.error('Ошибка при загрузке профиля курьера:', error)
+			}
+		}
+		loadCourierProfile()
+	}, [task.courierId])
 
 	const handleStartDelivery = async () => {
 		setIsLoading(true)
@@ -104,40 +149,85 @@ export const CourierDeliveryReport: FC<Props> = ({ task, onReportSubmitted }) =>
 				</View>
 			</View>
 
+			{/* Данные курьера */}
+			<View className='bg-gray-default rounded-lg p-4 mb-4'>
+				<View className='flex-row items-center mb-3'>
+					<Feather name='user' size={20} color='#BF3335' />
+					<Text className='text-white font-semibold ml-2'>Курьер</Text>
+				</View>
+				<Text className='text-gray-300 text-base font-semibold'>{task.courierName}</Text>
+				{courierProfile?.phone && (
+					<View className='flex-row items-center mt-2'>
+						<Feather name='phone' size={16} color='#BF3335' />
+						<Text className='text-gray-300 ml-2'>{courierProfile.phone}</Text>
+					</View>
+				)}
+			</View>
+
 			{/* Информация о доставке */}
 			<View className='bg-gray-default rounded-lg p-4 mb-4'>
 				<View className='flex-row items-center mb-3'>
 					<Feather name='map-pin' size={20} color='#BF3335' />
-					<Text className='text-white font-semibold ml-2'>Место доставки</Text>
+					<Text className='text-white font-semibold ml-2'>Места доставки</Text>
 				</View>
-				<Text className='text-gray-300 mb-2'>{task.destinationAddress}</Text>
-				{task.customDestination && (
-					<Text className='text-gray-400 text-sm'>{task.customDestination}</Text>
+				{task.destinationAddresses && task.destinationAddresses.length > 1 ? (
+					<View>
+						{task.destinationAddresses.map((address, idx) => (
+							<View key={idx} className='mb-2 pb-2 border-b border-gray-600 last:border-b-0 last:mb-0 last:pb-0'>
+								<Text className='text-gray-300'>{address}</Text>
+							</View>
+						))}
+					</View>
+				) : (
+					<>
+						<Text className='text-gray-300 mb-2'>{task.destinationAddress}</Text>
+						{task.customDestination && (
+							<Text className='text-gray-400 text-sm'>{task.customDestination}</Text>
+						)}
+					</>
 				)}
 			</View>
 
-			{/* Товары */}
+			{/* Заказы/Товары */}
 			<View className='bg-gray-default rounded-lg p-4 mb-4'>
 				<View className='flex-row items-center mb-3'>
 					<Feather name='package' size={20} color='#BF3335' />
 					<Text className='text-white font-semibold ml-2'>
-						Товары ({totalItems} шт.)
+						Заказы ({totalItems} шт.)
 					</Text>
 				</View>
-				{task.items.map((item, idx) => (
-					<View key={idx} className='flex-row justify-between items-center py-2 border-b border-gray-600 last:border-b-0'>
-						<View className='flex-1'>
-							<Text className='text-white text-sm'>{item.productName}</Text>
+				{task.items.map((item, idx) => {
+					const itemAddress = getAddressByServiceName(item.productName)
+					const itemRate = getDeliveryRate(itemAddress)
+					const itemEarnings = itemRate * item.quantity
+					
+					return (
+						<View key={idx} className='flex-row justify-between items-center py-2 border-b border-gray-600 last:border-b-0'>
+							<View className='flex-1'>
+								<Text className='text-white text-sm'>{item.productName}</Text>
+							</View>
+							<Text className='text-gray-300 text-sm w-16 text-center'>{item.quantity} шт</Text>
+							<Text className='text-primary text-sm w-20 text-right font-semibold'>
+								{itemEarnings}₽
+							</Text>
 						</View>
-						<Text className='text-gray-300 text-sm w-16 text-center'>{item.quantity} шт</Text>
-						<Text className='text-primary text-sm w-20 text-right font-semibold'>
-							{item.totalCost}₽
-						</Text>
-					</View>
-				))}
+					)
+				})}
 				<View className='mt-3 pt-3 border-t border-gray-600 flex-row justify-between'>
-					<Text className='text-white font-semibold'>Общая стоимость:</Text>
-					<Text className='text-primary font-bold'>{task.totalCost}₽</Text>
+					<Text className='text-white font-semibold'>Итого зарплата:</Text>
+					<Text className='text-primary font-bold'>
+						{(() => {
+							// Считаем зарплату: количество × тариф за каждый товар
+							let totalEarnings = 0
+							task.items.forEach(item => {
+								const itemAddress = getAddressByServiceName(item.productName)
+								const itemRate = getDeliveryRate(itemAddress)
+								totalEarnings += itemRate * item.quantity
+							})
+							
+							return totalEarnings
+						})()}₽
+					</Text>
 				</View>
 			</View>
 
@@ -153,101 +243,103 @@ export const CourierDeliveryReport: FC<Props> = ({ task, onReportSubmitted }) =>
 			)}
 
 			{/* Действия курьера */}
-			<View className='gap-3'>
-				{task.status === 'pending' && (
-					<Button
-						onPress={handleStartDelivery}
-						isLoading={isLoading}
-						icon='truck'
-					>
-						Начать доставку
-					</Button>
-				)}
-
-				{task.status === 'in_transit' && !showReportForm && (
-					<>
+			{isCourier && (
+				<View className='gap-3'>
+					{task.status === 'pending' && (
 						<Button
-							onPress={() => setShowReportForm(true)}
-							icon='check-circle'
+							onPress={handleStartDelivery}
+							isLoading={isLoading}
+							icon='truck'
 						>
-							Отчитаться о доставке
+							Начать доставку
 						</Button>
-						<TouchableOpacity
-							onPress={() => setShowReportForm(true)}
-							className='bg-red-600 p-3 rounded-lg flex-row items-center justify-center'
-						>
-							<Feather name='x-circle' size={20} color='white' />
-							<Text className='text-white font-bold ml-2'>Не удалось доставить</Text>
-						</TouchableOpacity>
-					</>
-				)}
+					)}
 
-				{showReportForm && (
-					<View className='bg-gray-default rounded-lg p-4'>
-						<Text className='text-white font-semibold mb-3'>Отчёт о доставке</Text>
-						<TextInput
-							className='bg-gray-600 text-white p-3 rounded-lg mb-4'
-							placeholder='Опишите результат доставки...'
-							placeholderTextColor='#999'
-							multiline
-							numberOfLines={4}
-							value={reportNotes}
-							onChangeText={setReportNotes}
-						/>
-						<View className='flex-row gap-3'>
-							<TouchableOpacity
-								onPress={handleSubmitReport}
-								disabled={isLoading}
-								className='flex-1 bg-green-600 p-3 rounded-lg flex-row items-center justify-center'
+					{task.status === 'in_transit' && !showReportForm && (
+						<>
+							<Button
+								onPress={() => setShowReportForm(true)}
+								icon='check-circle'
 							>
-								<Feather name='check' size={18} color='white' />
-								<Text className='text-white font-bold ml-2'>Доставлено</Text>
-							</TouchableOpacity>
+								Отчитаться о доставке
+							</Button>
 							<TouchableOpacity
-								onPress={handleMarkFailed}
-								disabled={isLoading}
-								className='flex-1 bg-red-600 p-3 rounded-lg flex-row items-center justify-center'
+								onPress={() => setShowReportForm(true)}
+								className='bg-red-600 p-3 rounded-lg flex-row items-center justify-center'
 							>
-								<Feather name='x' size={18} color='white' />
-								<Text className='text-white font-bold ml-2'>Не доставлено</Text>
+								<Feather name='x-circle' size={20} color='white' />
+								<Text className='text-white font-bold ml-2'>Не удалось доставить</Text>
+							</TouchableOpacity>
+						</>
+					)}
+
+					{showReportForm && (
+						<View className='bg-gray-default rounded-lg p-4'>
+							<Text className='text-white font-semibold mb-3'>Отчёт о доставке</Text>
+							<TextInput
+								className='bg-gray-600 text-white p-3 rounded-lg mb-4'
+								placeholder='Опишите результат доставки...'
+								placeholderTextColor='#999'
+								multiline
+								numberOfLines={4}
+								value={reportNotes}
+								onChangeText={setReportNotes}
+							/>
+							<View className='flex-row gap-3'>
+								<TouchableOpacity
+									onPress={handleSubmitReport}
+									disabled={isLoading}
+									className='flex-1 bg-green-600 p-3 rounded-lg flex-row items-center justify-center'
+								>
+									<Feather name='check' size={18} color='white' />
+									<Text className='text-white font-bold ml-2'>Доставлено</Text>
+								</TouchableOpacity>
+								<TouchableOpacity
+									onPress={handleMarkFailed}
+									disabled={isLoading}
+									className='flex-1 bg-red-600 p-3 rounded-lg flex-row items-center justify-center'
+								>
+									<Feather name='x' size={18} color='white' />
+									<Text className='text-white font-bold ml-2'>Не доставлено</Text>
+								</TouchableOpacity>
+							</View>
+							<TouchableOpacity
+								onPress={() => setShowReportForm(false)}
+								className='mt-2 p-2 items-center'
+							>
+								<Text className='text-gray-400'>Отмена</Text>
 							</TouchableOpacity>
 						</View>
-						<TouchableOpacity
-							onPress={() => setShowReportForm(false)}
-							className='mt-2 p-2 items-center'
-						>
-							<Text className='text-gray-400'>Отмена</Text>
-						</TouchableOpacity>
-					</View>
-				)}
+					)}
 
-				{task.status === 'delivered' && (
-					<View className='bg-green-600/20 rounded-lg p-4 border border-green-600/30'>
-						<View className='flex-row items-center gap-2 mb-2'>
-							<Feather name='check-circle' size={20} color='#10B981' />
-							<Text className='text-green-400 font-semibold'>Доставка завершена</Text>
+					{task.status === 'delivered' && (
+						<View className='bg-green-600/20 rounded-lg p-4 border border-green-600/30'>
+							<View className='flex-row items-center gap-2 mb-2'>
+								<Feather name='check-circle' size={20} color='#10B981' />
+								<Text className='text-green-400 font-semibold'>Доставка завершена</Text>
+							</View>
+							<Text className='text-green-300 text-sm'>
+								{new Date(task.deliveredAt!).toLocaleString('ru-RU')}
+							</Text>
+							{task.notes && (
+								<Text className='text-green-200 text-sm mt-2'>{task.notes}</Text>
+							)}
 						</View>
-						<Text className='text-green-300 text-sm'>
-							{new Date(task.deliveredAt!).toLocaleString('ru-RU')}
-						</Text>
-						{task.notes && (
-							<Text className='text-green-200 text-sm mt-2'>{task.notes}</Text>
-						)}
-					</View>
-				)}
+					)}
 
-				{task.status === 'failed' && (
-					<View className='bg-red-600/20 rounded-lg p-4 border border-red-600/30'>
-						<View className='flex-row items-center gap-2 mb-2'>
-							<Feather name='x-circle' size={20} color='#EF4444' />
-							<Text className='text-red-400 font-semibold'>Доставка не удалась</Text>
+					{task.status === 'failed' && (
+						<View className='bg-red-600/20 rounded-lg p-4 border border-red-600/30'>
+							<View className='flex-row items-center gap-2 mb-2'>
+								<Feather name='x-circle' size={20} color='#EF4444' />
+								<Text className='text-red-400 font-semibold'>Доставка не удалась</Text>
+							</View>
+							{task.notes && (
+								<Text className='text-red-200 text-sm mt-2'>{task.notes}</Text>
+							)}
 						</View>
-						{task.notes && (
-							<Text className='text-red-200 text-sm mt-2'>{task.notes}</Text>
-						)}
-					</View>
-				)}
-			</View>
+					)}
+				</View>
+			)}
 		</ScrollView>
 	)
 }

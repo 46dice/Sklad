@@ -66,10 +66,7 @@ export default function ProductList({
 						</View>
 						<Text className='text-primary font-bold'>{item.price} ₽</Text>
 					</View>
-					<View className='flex-row items-center justify-between mb-3'>
-						<Text className='text-gray-500 text-sm'>На складе:</Text>
-						<Text className='text-white font-semibold'>{item.quantity} ед.</Text>
-					</View>
+
 					{item.description && (
 						<Text className='text-gray-500 text-sm mb-3'>{item.description}</Text>
 					)}
@@ -94,7 +91,7 @@ export default function ProductList({
 							onPress={() =>
 								item.id && handleEditPress({ ...item, id: item.id })
 							}
-							className='flex-1 bg-gray-500 rounded-lg py-2 flex-row items-center justify-center gap-2'
+							className='flex-1 bg-red-500 rounded-lg py-2 flex-row items-center justify-center gap-2'
 						>
 							<Feather name='edit-2' size={16} color='white' />
 							<Text className='text-white font-semibold'>Изменить</Text>

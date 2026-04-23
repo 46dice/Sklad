@@ -26,7 +26,18 @@ export const useDeliveries = () => {
 				id: doc.id
 			} as IDeliveryTask))
 			
-			setDeliveries(deliveriesList)
+			// Фильтруем доставки - показываем только те, где текущий пользователь - менеджер или курьер
+			// Но не показываем дубликаты (если доставка есть и в коллекции менеджера, и в коллекции курьера)
+			const filteredDeliveries = deliveriesList.filter(delivery => {
+				// Если это менеджер - показываем только его доставки (где он создатель)
+				if (delivery.managerId === user.uid) return true
+				// Если это курьер - показываем только его доставки (где он назначен)
+				// НО только если это не копия в его коллекции (проверяем, что managerId не равен его ID)
+				if (delivery.courierId === user.uid && delivery.managerId !== user.uid) return true
+				return false
+			})
+			
+			setDeliveries(filteredDeliveries)
 		} catch (error) {
 			showToast(`Ошибка при загрузке доставок: ${error}`)
 		} finally {
@@ -51,6 +62,7 @@ export const useDeliveries = () => {
 				managerName: user.email || 'Менеджер',
 				destination: formData.destination,
 				destinationAddress: formData.destinationAddress,
+				destinationAddresses: formData.destinationAddresses, // Сохраняем все адреса
 				items: formData.items,
 				totalCost: formData.items.reduce((sum, item) => sum + item.totalCost, 0),
 				status: 'pending' as const,
@@ -62,9 +74,9 @@ export const useDeliveries = () => {
 			const docRef = await addDoc(deliveriesCollection, newTask)
 			const savedTask: IDeliveryTask = { ...newTask, id: docRef.id }
 
-			// Сохраняем копию доставки в коллекции курьера
+			// Сохраняем копию доставки в коллекции курьера с ТЕМ ЖЕ ID
 			const courierDeliveriesCollection = collection(db, 'users', formData.courierId, 'deliveries')
-			await addDoc(courierDeliveriesCollection, newTask)
+			await setDoc(doc(courierDeliveriesCollection, docRef.id), newTask)
 
 			// Записываем движение товаров (резервирование для доставки)
 			for (const item of formData.items) {
@@ -147,20 +159,14 @@ export const useDeliveries = () => {
 				}
 			}
 
-			// Обновляем в коллекции текущего пользователя
-			await updateDoc(taskRef, updateData)
+			// Обновляем в коллекции менеджера (где хранится доставка)
+			const managerTaskRef = doc(db, 'users', task.managerId, 'deliveries', taskId)
+			await updateDoc(managerTaskRef, updateData)
 			
-			// Если это курьер, обновляем также в коллекции менеджера
-			if (task.managerId && task.managerId !== user.uid) {
-				const managerTaskRef = doc(db, 'users', task.managerId, 'deliveries', taskId)
-				try {
-					await updateDoc(managerTaskRef, updateData)
-				} catch (error: any) {
-					// Если документ не существует в коллекции менеджера, создаем его
-					if (error.code === 'not-found') {
-						await setDoc(managerTaskRef, { ...task, ...updateData })
-					}
-				}
+			// Обновляем также в коллекции курьера
+			if (task.courierId) {
+				const courierTaskRef = doc(db, 'users', task.courierId, 'deliveries', taskId)
+				await updateDoc(courierTaskRef, updateData)
 			}
 			
 			setDeliveries(prev => 

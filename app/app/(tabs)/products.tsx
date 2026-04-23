@@ -58,7 +58,7 @@ const Products: FC<Props> = () => {
 				<Input
 					searchIcon
 					placeholder='Поиск по товарам'
-					className='text-white'
+					// className='text-white'
 					value={searchQuery}
 					onChangeText={searchProducts}
 				/>
