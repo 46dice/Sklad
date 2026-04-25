@@ -1,3 +1,4 @@
+import { useTheme } from '@/providers/theme/ThemeProvider'
 import { ContractStatus, IContract } from '@/shared/types/contracts.types'
 import { Feather } from '@expo/vector-icons'
 import { FC } from 'react'
@@ -12,12 +13,9 @@ type Props = {
 
 const getStatusColor = (status: ContractStatus) => {
 	switch (status) {
-		case 'draft':
-			return '#F59E0B'
-		case 'active':
-			return '#10B981'
-		default:
-			return '#9CA3AF'
+		case 'draft': return '#F59E0B'
+		case 'active': return '#10B981'
+		default: return '#9CA3AF'
 	}
 }
 
@@ -30,57 +28,52 @@ const getStatusLabel = (status: ContractStatus) => {
 }
 
 export const ContractCard: FC<Props> = ({ contract, onPress, onEdit, onDelete }) => {
+	const { colors } = useTheme()
 	return (
 		<TouchableOpacity onPress={onPress}>
-			<View className='bg-gray-default rounded-lg p-4 mb-3'>
-				<View className='flex-row items-start justify-between'>
-					<View className='flex-1'>
-						<View className='flex-row items-center gap-3 mb-2'>
-							<Feather name='file-text' size={20} color='#BF3335' />
-							<Text className='text-white font-semibold text-base'>
+			<View style={{ backgroundColor: colors.surface, borderRadius: 8, padding: 16, marginBottom: 12 }}>
+				<View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+					<View style={{ flex: 1 }}>
+						<View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+							<Feather name='file-text' size={20} color={colors.primary} />
+							<Text style={{ color: colors.text, fontWeight: '600', fontSize: 16 }}>
 								{contract.contractNumber}
 							</Text>
 						</View>
-						<Text className='text-gray-400 text-sm mb-1'>{contract.clientName}</Text>
-						<Text className='text-gray-500 text-xs'>
+						<Text style={{ color: colors.textSecondary, fontSize: 14, marginBottom: 4 }}>{contract.clientName}</Text>
+						<Text style={{ color: colors.textSecondary, fontSize: 12 }}>
 							Сумма: {contract.terms.price.toLocaleString()} {contract.terms.currency}
 						</Text>
-						<Text className='text-gray-500 text-xs'>
+						<Text style={{ color: colors.textSecondary, fontSize: 12 }}>
 							Действителен до: {new Date(contract.terms.validUntil).toLocaleDateString('ru-RU')}
 						</Text>
 					</View>
-					<View
-						className='px-3 py-1 rounded-full'
-						style={{ backgroundColor: getStatusColor(contract.status) + '20' }}
-					>
-						<Text
-							className='text-xs font-semibold'
-							style={{ color: getStatusColor(contract.status) }}
-						>
+					<View style={{ paddingHorizontal: 12, paddingVertical: 4, borderRadius: 999, backgroundColor: getStatusColor(contract.status) + '20' }}>
+						<Text style={{ fontSize: 12, fontWeight: '600', color: getStatusColor(contract.status) }}>
 							{getStatusLabel(contract.status)}
 						</Text>
 					</View>
 				</View>
 
 				{contract.description && (
-					<Text className='text-gray-400 text-xs mt-2 line-clamp-2'>
+					<Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 8 }} numberOfLines={2}>
 						{contract.description}
 					</Text>
 				)}
 
-				<View className='flex-row justify-end gap-2 mt-3'>
+				<View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginTop: 12 }}>
 					{onEdit && (
 						<TouchableOpacity
 							onPress={onEdit}
-							className='bg-primary/20 px-3 py-1 rounded'
+							style={{ backgroundColor: colors.primary + '20', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 4 }}
 						>
-							<Feather name='edit' size={14} color='#BF3335' />
+							<Feather name='edit' size={14} color={colors.primary} />
 						</TouchableOpacity>
 					)}
 					{onDelete && (
 						<TouchableOpacity
 							onPress={onDelete}
-							className='bg-red-500/20 px-3 py-1 rounded'
+							style={{ backgroundColor: '#ef444420', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 4 }}
 						>
 							<Feather name='trash-2' size={14} color='#EF4444' />
 						</TouchableOpacity>

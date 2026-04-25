@@ -1,24 +1,28 @@
 import GoBackArrowButton from '@/components/GoBackArrowButton'
-import { Colors } from '@/shared/constants/Colors'
+import { useTheme } from '@/providers/theme/ThemeProvider'
 import { Stack } from 'expo-router'
 
 export default function _layout() {
+	const { colors } = useTheme()
 
 	return (
 		<Stack
 			screenOptions={{
 				headerStyle: {
-					backgroundColor: Colors.black,
+					backgroundColor: colors.surface,
+				},
+				headerTitleStyle: {
+					color: colors.text,
 				},
 				contentStyle: {
-					backgroundColor: Colors.black,
+					backgroundColor: colors.background,
 				}
 			}}
 		>
 			<Stack.Screen
 				name='profile'
 				options={{
-					title:'Профиль',
+					title: 'Профиль',
 					headerLeft: () => (
 						<GoBackArrowButton />
 					)

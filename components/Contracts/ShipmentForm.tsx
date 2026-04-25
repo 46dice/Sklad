@@ -1,3 +1,4 @@
+import { useTheme } from '@/providers/theme/ThemeProvider'
 import { INewShipmentForm, IShipmentItem } from '@/shared/types/shipment.types'
 import { Feather } from '@expo/vector-icons'
 import { FC, useState } from 'react'
@@ -26,24 +27,11 @@ interface SelectedService {
 	price: number
 }
 
-export const ShipmentForm: FC<Props> = ({
-	initialData,
-	onSubmit,
-	onBack,
-	clients,
-	services
-}) => {
+export const ShipmentForm: FC<Props> = ({ initialData, onSubmit, onBack, clients, services }) => {
+	const { colors } = useTheme()
 	const [formData, setFormData] = useState<INewShipmentForm>(
-		initialData || {
-			clientId: '',
-			clientName: '',
-			clientInn: '',
-			clientAddress: '',
-			items: [],
-			notes: ''
-		}
+		initialData || { clientId: '', clientName: '', clientInn: '', clientAddress: '', items: [], notes: '' }
 	)
-
 	const [showClientDropdown, setShowClientDropdown] = useState(false)
 	const [showServiceDropdown, setShowServiceDropdown] = useState(false)
 	const [selectedServices, setSelectedServices] = useState<SelectedService[]>(
@@ -56,10 +44,7 @@ export const ShipmentForm: FC<Props> = ({
 	)
 
 	const handleChange = (key: keyof INewShipmentForm, value: any) => {
-		setFormData(prev => ({
-			...prev,
-			[key]: value
-		}))
+		setFormData(prev => ({ ...prev, [key]: value }))
 	}
 
 	const handleSelectClient = (clientId: string, clientName: string, inn: string, address: string) => {
@@ -76,21 +61,11 @@ export const ShipmentForm: FC<Props> = ({
 		} else {
 			const existing = selectedServices.find(s => s.serviceId === serviceId)
 			if (existing) {
-				setSelectedServices(prev =>
-					prev.map(s => (s.serviceId === serviceId ? { ...s, quantity } : s))
-				)
+				setSelectedServices(prev => prev.map(s => s.serviceId === serviceId ? { ...s, quantity } : s))
 			} else {
 				const service = services.find(s => s.id === serviceId)
 				if (service) {
-					setSelectedServices(prev => [
-						...prev,
-						{
-							serviceId,
-							serviceName: service.name,
-							quantity,
-							price: service.price
-						}
-					])
+					setSelectedServices(prev => [...prev, { serviceId, serviceName: service.name, quantity, price: service.price }])
 				}
 			}
 		}
@@ -101,15 +76,8 @@ export const ShipmentForm: FC<Props> = ({
 	}
 
 	const handleSubmit = () => {
-		if (!formData.clientId) {
-			alert('Выберите контрагента')
-			return
-		}
-		if (selectedServices.length === 0) {
-			alert('Добавьте услуги. Если услуг нет, сначала создайте товары в разделе "Товары".')
-			return
-		}
-
+		if (!formData.clientId) { alert('Выберите контрагента'); return }
+		if (selectedServices.length === 0) { alert('Добавьте услуги.'); return }
 		const items: IShipmentItem[] = selectedServices.map(s => ({
 			serviceId: s.serviceId,
 			serviceName: s.serviceName,
@@ -117,239 +85,162 @@ export const ShipmentForm: FC<Props> = ({
 			price: s.price,
 			totalAmount: s.price * s.quantity
 		}))
-
-		onSubmit({
-			...formData,
-			items
-		})
+		onSubmit({ ...formData, items })
 	}
 
-	const totalAmount = selectedServices.reduce(
-		(sum, s) => sum + s.quantity * s.price,
-		0
-	)
+	const totalAmount = selectedServices.reduce((sum, s) => sum + s.quantity * s.price, 0)
 
 	return (
-		<KeyboardAvoidingView
-			behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-			className='flex-1'
-		>
-			{/* Header with Back Button */}
-			<View className='flex-row items-center px-4 pt-4 pb-2 bg-black border-b border-gray-800'>
+		<KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+			{/* Header */}
+			<View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8, backgroundColor: colors.surface, borderBottomWidth: 1, borderBottomColor: colors.border }}>
 				{onBack && (
-					<TouchableOpacity onPress={onBack} className='mr-3'>
-						<Feather name='arrow-left' size={24} color='white' />
+					<TouchableOpacity onPress={onBack} style={{ marginRight: 12 }}>
+						<Feather name='arrow-left' size={24} color={colors.text} />
 					</TouchableOpacity>
 				)}
-				<Text className='text-white text-2xl font-bold'>
+				<Text style={{ color: colors.text, fontSize: 22, fontWeight: 'bold' }}>
 					{initialData ? 'Редактировать акт' : 'Новый акт отгрузки'}
 				</Text>
 			</View>
 
-			<ScrollView
-				className='flex-1 bg-black'
-				contentContainerStyle={{ padding: 16 }}
-			>
-				<View className='gap-4'>
+			<ScrollView style={{ flex: 1, backgroundColor: colors.background }} contentContainerStyle={{ padding: 16 }}>
+				<View style={{ gap: 16 }}>
 
-				{/* Client Selection */}
-				<View className='mb-4'>
-					<Text className='text-gray-300 text-sm font-medium mb-2'>
-						Контрагент *
-					</Text>
-					<TouchableOpacity
-						onPress={() => setShowClientDropdown(!showClientDropdown)}
-						className='bg-gray-default p-3 rounded-lg flex-row items-center justify-between'
-					>
-						<Text
-							className={`text-base ${formData.clientName ? 'text-white' : 'text-gray-500'}`}
+					{/* Контрагент */}
+					<View>
+						<Text style={{ color: colors.textSecondary, fontSize: 14, fontWeight: '500', marginBottom: 8 }}>Контрагент *</Text>
+						<TouchableOpacity
+							onPress={() => setShowClientDropdown(!showClientDropdown)}
+							style={{ backgroundColor: colors.surface, padding: 12, borderRadius: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
 						>
-							{formData.clientName || 'Выберите контрагента'}
-						</Text>
-						<Feather
-							name={showClientDropdown ? 'chevron-up' : 'chevron-down'}
-							size={20}
-							color='#666'
-						/>
-					</TouchableOpacity>
-
-					{showClientDropdown && (
-						<View className='bg-gray-default mt-1 rounded-lg overflow-hidden'>
-							{clients.map(client => (
-								<TouchableOpacity
-									key={client.id}
-									onPress={() => handleSelectClient(client.id, client.name, client.inn, client.address)}
-									className='p-3 border-b border-gray-600'
-								>
-									<Text className='text-white font-medium'>{client.name}</Text>
-									<Text className='text-gray-400 text-xs'>ИНН: {client.inn}</Text>
-								</TouchableOpacity>
-							))}
-						</View>
-					)}
-				</View>
-
-				{/* Services Selection */}
-				<View className='mb-4'>
-					<Text className='text-gray-300 text-sm font-medium mb-2'>Услуги *</Text>
-					{services.length === 0 ? (
-						<View className='bg-gray-default p-3 rounded-lg'>
-							<Text className='text-gray-400 text-sm'>
-								Нет доступных услуг. Сначала добавьте товары в разделе "Товары".
+							<Text style={{ fontSize: 16, color: formData.clientName ? colors.text : colors.textSecondary }}>
+								{formData.clientName || 'Выберите контрагента'}
 							</Text>
-						</View>
-					) : (
-						<>
-							<TouchableOpacity
-								onPress={() => setShowServiceDropdown(!showServiceDropdown)}
-								className='bg-gray-default p-3 rounded-lg flex-row items-center justify-between'
-							>
-								<Text className='text-base text-gray-500'>
-									{selectedServices.length === 0
-										? 'Добавить услуги'
-										: `Услуг: ${selectedServices.length}`}
-								</Text>
-								<Feather
-									name={showServiceDropdown ? 'chevron-up' : 'chevron-down'}
-									size={20}
-									color='#666'
-								/>
-							</TouchableOpacity>
-
-							{showServiceDropdown && (
-								<View className='bg-gray-default mt-1 rounded-lg overflow-hidden max-h-64'>
-									<ScrollView nestedScrollEnabled>
-										{services.map(service => (
-											<View
-												key={service.id}
-												className='flex-row items-center gap-2 p-3 border-b border-gray-600'
-											>
-												<View className='flex-1'>
-													<Text className='text-white font-medium text-sm'>
-														{service.name}
-													</Text>
-													<Text className='text-gray-400 text-xs'>
-														{service.price}₽/шт
-													</Text>
-												</View>
-												<TouchableOpacity
-													onPress={() =>
-														handleServiceQuantityChange(
-															service.id,
-															(selectedServices.find(s => s.serviceId === service.id)
-																?.quantity || 0) - 1
-														)
-													}
-													className='bg-gray-600 w-6 h-6 rounded items-center justify-center'
-												>
-													<Text className='text-white text-sm'>−</Text>
-												</TouchableOpacity>
-												<Text className='text-white font-semibold w-6 text-center text-sm'>
-													{selectedServices.find(s => s.serviceId === service.id)
-														?.quantity || 0}
-												</Text>
-												<TouchableOpacity
-													onPress={() =>
-														handleServiceQuantityChange(
-															service.id,
-															(selectedServices.find(s => s.serviceId === service.id)
-																?.quantity || 0) + 1
-														)
-													}
-													className='bg-primary w-6 h-6 rounded items-center justify-center'
-												>
-													<Text className='text-white text-sm'>+</Text>
-												</TouchableOpacity>
-											</View>
-										))}
-									</ScrollView>
-								</View>
-							)}
-						</>
-					)}
-				</View>
-
-				{/* Selected Services Table */}
-				{selectedServices.length > 0 && (
-					<View className='mb-4 bg-gray-default rounded-lg p-4'>
-						<Text className='text-white font-semibold mb-3'>
-							Выбранные услуги
-						</Text>
-						<View className='flex-row pb-2 mb-2 border-b border-gray-600'>
-							<Text className='flex-1 text-gray-400 text-xs font-semibold'>
-								Услуга
-							</Text>
-							<Text className='w-10 text-gray-400 text-xs font-semibold text-center'>
-								Кол-во
-							</Text>
-							<Text className='w-14 text-gray-400 text-xs font-semibold text-right'>
-								Цена
-							</Text>
-							<Text className='w-16 text-gray-400 text-xs font-semibold text-right'>
-								Сумма
-							</Text>
-							<Text className='w-8'></Text>
-						</View>
-						{selectedServices.map(service => (
-							<View
-								key={service.serviceId}
-								className='flex-row items-center pb-2 mb-2 border-b border-gray-700 last:border-b-0 last:mb-0 last:pb-0'
-							>
-								<Text className='flex-1 text-white text-xs'>
-									{service.serviceName}
-								</Text>
-								<Text className='w-10 text-white text-xs text-center'>
-									{service.quantity}
-								</Text>
-								<Text className='w-14 text-white text-xs text-right'>
-									{service.price}₽
-								</Text>
-								<Text className='w-16 text-primary text-xs text-right font-semibold'>
-									{(service.quantity * service.price).toFixed(0)}₽
-								</Text>
-								<TouchableOpacity
-									onPress={() => handleRemoveService(service.serviceId)}
-									className='w-8 items-center'
-								>
-									<Feather name='x' size={14} color='#EF4444' />
-								</TouchableOpacity>
+							<Feather name={showClientDropdown ? 'chevron-up' : 'chevron-down'} size={20} color={colors.textSecondary} />
+						</TouchableOpacity>
+						{showClientDropdown && (
+							<View style={{ backgroundColor: colors.surface, marginTop: 4, borderRadius: 8, overflow: 'hidden' }}>
+								{clients.map(client => (
+									<TouchableOpacity
+										key={client.id}
+										onPress={() => handleSelectClient(client.id, client.name, client.inn, client.address)}
+										style={{ padding: 12, borderBottomWidth: 1, borderBottomColor: colors.border }}
+									>
+										<Text style={{ color: colors.text, fontWeight: '500' }}>{client.name}</Text>
+										<Text style={{ color: colors.textSecondary, fontSize: 12 }}>ИНН: {client.inn}</Text>
+									</TouchableOpacity>
+								))}
 							</View>
-						))}
-						<View className='mt-3 pt-3 border-t border-gray-600 flex-row justify-between'>
-							<Text className='text-white font-semibold'>Итого:</Text>
-							<Text className='text-primary font-bold'>
-								{totalAmount.toFixed(0)}₽
-							</Text>
-						</View>
+						)}
 					</View>
-				)}
 
-				{/* Notes */}
-				<View className='mb-6'>
-					<Text className='text-gray-300 text-sm font-medium mb-2'>
-						Примечания
-					</Text>
-					<TextInput
-						className='bg-gray-default text-white p-3 rounded-lg'
-						placeholder='Дополнительная информация...'
-						placeholderTextColor='#666'
-						multiline
-						numberOfLines={3}
-						value={formData.notes}
-						onChangeText={val => handleChange('notes', val)}
-					/>
-				</View>
+					{/* Услуги */}
+					<View>
+						<Text style={{ color: colors.textSecondary, fontSize: 14, fontWeight: '500', marginBottom: 8 }}>Услуги *</Text>
+						{services.length === 0 ? (
+							<View style={{ backgroundColor: colors.surface, padding: 12, borderRadius: 8 }}>
+								<Text style={{ color: colors.textSecondary, fontSize: 14 }}>
+									Нет доступных услуг. Сначала добавьте товары в разделе "Товары".
+								</Text>
+							</View>
+						) : (
+							<>
+								<TouchableOpacity
+									onPress={() => setShowServiceDropdown(!showServiceDropdown)}
+									style={{ backgroundColor: colors.surface, padding: 12, borderRadius: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+								>
+									<Text style={{ fontSize: 16, color: colors.textSecondary }}>
+										{selectedServices.length === 0 ? 'Добавить услуги' : `Услуг: ${selectedServices.length}`}
+									</Text>
+									<Feather name={showServiceDropdown ? 'chevron-up' : 'chevron-down'} size={20} color={colors.textSecondary} />
+								</TouchableOpacity>
+								{showServiceDropdown && (
+									<View style={{ backgroundColor: colors.surface, marginTop: 4, borderRadius: 8, overflow: 'hidden', maxHeight: 256 }}>
+										<ScrollView nestedScrollEnabled>
+											{services.map(service => (
+												<View key={service.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+													<View style={{ flex: 1 }}>
+														<Text style={{ color: colors.text, fontWeight: '500', fontSize: 14 }}>{service.name}</Text>
+														<Text style={{ color: colors.textSecondary, fontSize: 12 }}>{service.price}₽/шт</Text>
+													</View>
+													<TouchableOpacity
+														onPress={() => handleServiceQuantityChange(service.id, (selectedServices.find(s => s.serviceId === service.id)?.quantity || 0) - 1)}
+														style={{ backgroundColor: colors.border, width: 24, height: 24, borderRadius: 4, alignItems: 'center', justifyContent: 'center' }}
+													>
+														<Text style={{ color: colors.text, fontSize: 14 }}>−</Text>
+													</TouchableOpacity>
+													<Text style={{ color: colors.text, fontWeight: '600', width: 24, textAlign: 'center', fontSize: 14 }}>
+														{selectedServices.find(s => s.serviceId === service.id)?.quantity || 0}
+													</Text>
+													<TouchableOpacity
+														onPress={() => handleServiceQuantityChange(service.id, (selectedServices.find(s => s.serviceId === service.id)?.quantity || 0) + 1)}
+														style={{ backgroundColor: colors.primary, width: 24, height: 24, borderRadius: 4, alignItems: 'center', justifyContent: 'center' }}
+													>
+														<Text style={{ color: 'white', fontSize: 14 }}>+</Text>
+													</TouchableOpacity>
+												</View>
+											))}
+										</ScrollView>
+									</View>
+								)}
+							</>
+						)}
+					</View>
 
-				{/* Submit Button */}
-				<TouchableOpacity
-					onPress={handleSubmit}
-					className='bg-primary p-4 rounded-lg flex-row items-center justify-center'
-				>
-					<Feather name='check' size={20} color='white' />
-					<Text className='text-white font-bold text-lg ml-2'>
-						{initialData ? 'Сохранить' : 'Создать акт'}
-					</Text>
-				</TouchableOpacity>
+					{/* Выбранные услуги */}
+					{selectedServices.length > 0 && (
+						<View style={{ backgroundColor: colors.surface, borderRadius: 8, padding: 16 }}>
+							<Text style={{ color: colors.text, fontWeight: '600', marginBottom: 12 }}>Выбранные услуги</Text>
+							<View style={{ flexDirection: 'row', paddingBottom: 8, marginBottom: 8, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+								<Text style={{ flex: 1, color: colors.textSecondary, fontSize: 12, fontWeight: '600' }}>Услуга</Text>
+								<Text style={{ width: 40, color: colors.textSecondary, fontSize: 12, fontWeight: '600', textAlign: 'center' }}>Кол</Text>
+								<Text style={{ width: 56, color: colors.textSecondary, fontSize: 12, fontWeight: '600', textAlign: 'right' }}>Цена</Text>
+								<Text style={{ width: 64, color: colors.textSecondary, fontSize: 12, fontWeight: '600', textAlign: 'right' }}>Сумма</Text>
+								<Text style={{ width: 32 }}></Text>
+							</View>
+							{selectedServices.map(service => (
+								<View key={service.serviceId} style={{ flexDirection: 'row', alignItems: 'center', paddingBottom: 8, marginBottom: 8, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+									<Text style={{ flex: 1, color: colors.text, fontSize: 12 }}>{service.serviceName}</Text>
+									<Text style={{ width: 40, color: colors.text, fontSize: 12, textAlign: 'center' }}>{service.quantity}</Text>
+									<Text style={{ width: 56, color: colors.text, fontSize: 12, textAlign: 'right' }}>{service.price}₽</Text>
+									<Text style={{ width: 64, color: colors.primary, fontSize: 12, textAlign: 'right', fontWeight: '600' }}>{(service.quantity * service.price).toFixed(0)}₽</Text>
+									<TouchableOpacity onPress={() => handleRemoveService(service.serviceId)} style={{ width: 32, alignItems: 'center' }}>
+										<Feather name='x' size={14} color={colors.error} />
+									</TouchableOpacity>
+								</View>
+							))}
+							<View style={{ marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.border, flexDirection: 'row', justifyContent: 'space-between' }}>
+								<Text style={{ color: colors.text, fontWeight: '600' }}>Итого:</Text>
+								<Text style={{ color: colors.primary, fontWeight: 'bold' }}>{totalAmount.toFixed(0)}₽</Text>
+							</View>
+						</View>
+					)}
+
+					{/* Примечания */}
+					<View style={{ marginBottom: 24 }}>
+						<Text style={{ color: colors.textSecondary, fontSize: 14, fontWeight: '500', marginBottom: 8 }}>Примечания</Text>
+						<TextInput
+							style={{ backgroundColor: colors.surface, color: colors.text, padding: 12, borderRadius: 8 }}
+							placeholder='Дополнительная информация...'
+							placeholderTextColor={colors.textSecondary}
+							multiline
+							numberOfLines={3}
+							value={formData.notes}
+							onChangeText={val => handleChange('notes', val)}
+						/>
+					</View>
+
+					{/* Кнопка */}
+					<TouchableOpacity
+						onPress={handleSubmit}
+						style={{ backgroundColor: colors.primary, padding: 16, borderRadius: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}
+					>
+						<Feather name='check' size={20} color='white' />
+						<Text style={{ color: 'white', fontWeight: 'bold', fontSize: 18, marginLeft: 8 }}>
+							{initialData ? 'Сохранить' : 'Создать акт'}
+						</Text>
+					</TouchableOpacity>
 				</View>
 			</ScrollView>
 		</KeyboardAvoidingView>

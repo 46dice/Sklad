@@ -1,6 +1,7 @@
 import { db } from '@/firebase'
 import { useAuth } from '@/hooks/useAuth'
 import { useDeliveries } from '@/hooks/useDeliveries'
+import { useTheme } from '@/providers/theme/ThemeProvider'
 import { getDeliveryRate } from '@/shared/types/courier.types'
 import { IDeliveryTask } from '@/shared/types/delivery.types'
 import { IUserProfile } from '@/shared/types/user.types'
@@ -64,6 +65,7 @@ const getAddressByServiceName = (serviceName: string): string => {
 export const CourierDeliveryReport: FC<Props> = ({ task, onReportSubmitted }) => {
 	const { updateDeliveryStatus, submitDeliveryReport } = useDeliveries()
 	const { userProfile } = useAuth()
+	const { colors } = useTheme()
 	const [isLoading, setIsLoading] = useState(false)
 	const [reportNotes, setReportNotes] = useState('')
 	const [showReportForm, setShowReportForm] = useState(false)
@@ -71,7 +73,6 @@ export const CourierDeliveryReport: FC<Props> = ({ task, onReportSubmitted }) =>
 
 	const isCourier = userProfile?.role === 'courier'
 
-	// Загружаем данные курьера
 	useEffect(() => {
 		const loadCourierProfile = async () => {
 			try {
@@ -91,9 +92,7 @@ export const CourierDeliveryReport: FC<Props> = ({ task, onReportSubmitted }) =>
 		setIsLoading(true)
 		const success = await updateDeliveryStatus(task.id, 'in_transit')
 		setIsLoading(false)
-		if (success) {
-			onReportSubmitted?.()
-		}
+		if (success) onReportSubmitted?.()
 	}
 
 	const handleSubmitReport = async () => {
@@ -101,7 +100,6 @@ export const CourierDeliveryReport: FC<Props> = ({ task, onReportSubmitted }) =>
 			alert('Добавьте заметки о доставке')
 			return
 		}
-
 		setIsLoading(true)
 		const success = await submitDeliveryReport({
 			taskId: task.id,
@@ -109,7 +107,6 @@ export const CourierDeliveryReport: FC<Props> = ({ task, onReportSubmitted }) =>
 			notes: reportNotes
 		})
 		setIsLoading(false)
-
 		if (success) {
 			setShowReportForm(false)
 			setReportNotes('')
@@ -124,75 +121,67 @@ export const CourierDeliveryReport: FC<Props> = ({ task, onReportSubmitted }) =>
 		})
 		setIsLoading(false)
 		setShowReportForm(false)
-		if (success) {
-			onReportSubmitted?.()
-		}
+		if (success) onReportSubmitted?.()
 	}
 
 	const totalItems = task.items.reduce((sum, item) => sum + item.quantity, 0)
 
 	return (
-		<ScrollView className='flex-1 bg-black' contentContainerStyle={{ padding: 16 }}>
+		<ScrollView style={{ flex: 1, backgroundColor: colors.background }} contentContainerStyle={{ padding: 16 }}>
 			{/* Заголовок */}
-			<View className='flex-row items-center justify-between mb-4'>
-				<Text className='text-white text-xl font-bold'>Задание {task.taskNumber}</Text>
-				<View
-					className='px-3 py-1 rounded-full'
-					style={{ backgroundColor: getStatusColor(task.status) + '20' }}
-				>
-					<Text
-						className='text-xs font-semibold'
-						style={{ color: getStatusColor(task.status) }}
-					>
+			<View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+				<Text style={{ color: colors.text, fontSize: 20, fontWeight: 'bold' }}>Задание {task.taskNumber}</Text>
+				<View style={{ paddingHorizontal: 12, paddingVertical: 4, borderRadius: 999, backgroundColor: getStatusColor(task.status) + '20' }}>
+					<Text style={{ fontSize: 12, fontWeight: '600', color: getStatusColor(task.status) }}>
 						{getStatusLabel(task.status)}
 					</Text>
 				</View>
 			</View>
 
 			{/* Данные курьера */}
-			<View className='bg-gray-default rounded-lg p-4 mb-4'>
-				<View className='flex-row items-center mb-3'>
-					<Feather name='user' size={20} color='#BF3335' />
-					<Text className='text-white font-semibold ml-2'>Курьер</Text>
+			<View style={{ backgroundColor: colors.surface, borderRadius: 8, padding: 16, marginBottom: 16 }}>
+				<View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+					<Feather name='user' size={20} color={colors.primary} />
+					<Text style={{ color: colors.text, fontWeight: '600', marginLeft: 8 }}>Курьер</Text>
 				</View>
-				<Text className='text-gray-300 text-base font-semibold'>{task.courierName}</Text>
+				<Text style={{ color: colors.text, fontSize: 16, fontWeight: '600' }}>{task.courierName}</Text>
 				{courierProfile?.phone && (
-					<View className='flex-row items-center mt-2'>
-						<Feather name='phone' size={16} color='#BF3335' />
-						<Text className='text-gray-300 ml-2'>{courierProfile.phone}</Text>
+					<View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
+						<Feather name='phone' size={16} color={colors.primary} />
+						<Text style={{ color: colors.text, marginLeft: 8 }}>{courierProfile.phone}</Text>
 					</View>
 				)}
 			</View>
 
-			{/* Информация о доставке */}
-			<View className='bg-gray-default rounded-lg p-4 mb-4'>
-				<View className='flex-row items-center mb-3'>
-					<Feather name='map-pin' size={20} color='#BF3335' />
-					<Text className='text-white font-semibold ml-2'>Места доставки</Text>
+			{/* Места доставки */}
+			<View style={{ backgroundColor: colors.surface, borderRadius: 8, padding: 16, marginBottom: 16 }}>
+				<View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+					<Feather name='map-pin' size={20} color={colors.primary} />
+					<Text style={{ color: colors.text, fontWeight: '600', marginLeft: 8 }}>Места доставки</Text>
 				</View>
 				{task.destinationAddresses && task.destinationAddresses.length > 1 ? (
 					<View>
 						{task.destinationAddresses.map((address, idx) => (
-							<View key={idx} className='mb-2 pb-2 border-b border-gray-600 last:border-b-0 last:mb-0 last:pb-0'>
-								<Text className='text-gray-300'>{address}</Text>
+							<View key={idx} style={{ marginBottom: 8, paddingBottom: 8, borderBottomWidth: idx < task.destinationAddresses!.length - 1 ? 1 : 0, borderBottomColor: colors.border }}>
+								<Text style={{ color: colors.text }}>{address}</Text>
 							</View>
 						))}
 					</View>
 				) : (
 					<>
-						<Text className='text-gray-300 mb-2'>{task.destinationAddress}</Text>
+						<Text style={{ color: colors.text, marginBottom: 8 }}>{task.destinationAddress}</Text>
 						{task.customDestination && (
-							<Text className='text-gray-400 text-sm'>{task.customDestination}</Text>
+							<Text style={{ color: colors.textSecondary, fontSize: 14 }}>{task.customDestination}</Text>
 						)}
 					</>
 				)}
 			</View>
 
-			{/* Заказы/Товары */}
-			<View className='bg-gray-default rounded-lg p-4 mb-4'>
-				<View className='flex-row items-center mb-3'>
-					<Feather name='package' size={20} color='#BF3335' />
-					<Text className='text-white font-semibold ml-2'>
+			{/* Заказы */}
+			<View style={{ backgroundColor: colors.surface, borderRadius: 8, padding: 16, marginBottom: 16 }}>
+				<View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+					<Feather name='package' size={20} color={colors.primary} />
+					<Text style={{ color: colors.text, fontWeight: '600', marginLeft: 8 }}>
 						Заказы ({totalItems} шт.)
 					</Text>
 				</View>
@@ -202,29 +191,27 @@ export const CourierDeliveryReport: FC<Props> = ({ task, onReportSubmitted }) =>
 					const itemEarnings = itemRate * item.quantity
 					
 					return (
-						<View key={idx} className='flex-row justify-between items-center py-2 border-b border-gray-600 last:border-b-0'>
-							<View className='flex-1'>
-								<Text className='text-white text-sm'>{item.productName}</Text>
+						<View key={idx} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+							<View style={{ flex: 1 }}>
+								<Text style={{ color: colors.text, fontSize: 14 }}>{item.productName}</Text>
 							</View>
-							<Text className='text-gray-300 text-sm w-16 text-center'>{item.quantity} шт</Text>
-							<Text className='text-primary text-sm w-20 text-right font-semibold'>
+							<Text style={{ color: colors.textSecondary, fontSize: 14, width: 64, textAlign: 'center' }}>{item.quantity} шт</Text>
+							<Text style={{ color: colors.primary, fontSize: 14, width: 80, textAlign: 'right', fontWeight: '600' }}>
 								{itemEarnings}₽
 							</Text>
 						</View>
 					)
 				})}
-				<View className='mt-3 pt-3 border-t border-gray-600 flex-row justify-between'>
-					<Text className='text-white font-semibold'>Итого зарплата:</Text>
-					<Text className='text-primary font-bold'>
+				<View style={{ marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.border, flexDirection: 'row', justifyContent: 'space-between' }}>
+					<Text style={{ color: colors.text, fontWeight: '600' }}>Итого зарплата:</Text>
+					<Text style={{ color: colors.primary, fontWeight: 'bold' }}>
 						{(() => {
-							// Считаем зарплату: количество × тариф за каждый товар
 							let totalEarnings = 0
 							task.items.forEach(item => {
 								const itemAddress = getAddressByServiceName(item.productName)
 								const itemRate = getDeliveryRate(itemAddress)
 								totalEarnings += itemRate * item.quantity
 							})
-							
 							return totalEarnings
 						})()}₽
 					</Text>
@@ -233,108 +220,98 @@ export const CourierDeliveryReport: FC<Props> = ({ task, onReportSubmitted }) =>
 
 			{/* Заметки менеджера */}
 			{task.managerNotes && (
-				<View className='bg-gray-default rounded-lg p-4 mb-4'>
-					<View className='flex-row items-center mb-2'>
-						<Feather name='message-square' size={18} color='#BF3335' />
-						<Text className='text-white font-semibold ml-2'>Заметки менеджера</Text>
+				<View style={{ backgroundColor: colors.surface, borderRadius: 8, padding: 16, marginBottom: 16 }}>
+					<View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+						<Feather name='message-square' size={18} color={colors.primary} />
+						<Text style={{ color: colors.text, fontWeight: '600', marginLeft: 8 }}>Заметки менеджера</Text>
 					</View>
-					<Text className='text-gray-300 text-sm'>{task.managerNotes}</Text>
+					<Text style={{ color: colors.textSecondary, fontSize: 14 }}>{task.managerNotes}</Text>
 				</View>
 			)}
 
 			{/* Действия курьера */}
 			{isCourier && (
-				<View className='gap-3'>
+				<View style={{ gap: 12 }}>
 					{task.status === 'pending' && (
-						<Button
-							onPress={handleStartDelivery}
-							isLoading={isLoading}
-							icon='truck'
-						>
+						<Button onPress={handleStartDelivery} isLoading={isLoading} icon='truck'>
 							Начать доставку
 						</Button>
 					)}
 
 					{task.status === 'in_transit' && !showReportForm && (
 						<>
-							<Button
-								onPress={() => setShowReportForm(true)}
-								icon='check-circle'
-							>
+							<Button onPress={() => setShowReportForm(true)} icon='check-circle'>
 								Отчитаться о доставке
 							</Button>
 							<TouchableOpacity
 								onPress={() => setShowReportForm(true)}
-								className='bg-red-600 p-3 rounded-lg flex-row items-center justify-center'
+								style={{ backgroundColor: colors.error, padding: 12, borderRadius: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}
 							>
 								<Feather name='x-circle' size={20} color='white' />
-								<Text className='text-white font-bold ml-2'>Не удалось доставить</Text>
+								<Text style={{ color: 'white', fontWeight: 'bold', marginLeft: 8 }}>Не удалось доставить</Text>
 							</TouchableOpacity>
 						</>
 					)}
 
 					{showReportForm && (
-						<View className='bg-gray-default rounded-lg p-4'>
-							<Text className='text-white font-semibold mb-3'>Отчёт о доставке</Text>
+						<View style={{ backgroundColor: colors.surface, borderRadius: 8, padding: 16 }}>
+							<Text style={{ color: colors.text, fontWeight: '600', marginBottom: 12 }}>Отчёт о доставке</Text>
 							<TextInput
-								className='bg-gray-600 text-white p-3 rounded-lg mb-4'
+								style={{ backgroundColor: colors.border, color: colors.text, padding: 12, borderRadius: 8, marginBottom: 16 }}
 								placeholder='Опишите результат доставки...'
-								placeholderTextColor='#999'
+								placeholderTextColor={colors.textSecondary}
 								multiline
 								numberOfLines={4}
 								value={reportNotes}
 								onChangeText={setReportNotes}
 							/>
-							<View className='flex-row gap-3'>
+							<View style={{ flexDirection: 'row', gap: 12 }}>
 								<TouchableOpacity
 									onPress={handleSubmitReport}
 									disabled={isLoading}
-									className='flex-1 bg-green-600 p-3 rounded-lg flex-row items-center justify-center'
+									style={{ flex: 1, backgroundColor: colors.success, padding: 12, borderRadius: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}
 								>
 									<Feather name='check' size={18} color='white' />
-									<Text className='text-white font-bold ml-2'>Доставлено</Text>
+									<Text style={{ color: 'white', fontWeight: 'bold', marginLeft: 8 }}>Доставлено</Text>
 								</TouchableOpacity>
 								<TouchableOpacity
 									onPress={handleMarkFailed}
 									disabled={isLoading}
-									className='flex-1 bg-red-600 p-3 rounded-lg flex-row items-center justify-center'
+									style={{ flex: 1, backgroundColor: colors.error, padding: 12, borderRadius: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}
 								>
 									<Feather name='x' size={18} color='white' />
-									<Text className='text-white font-bold ml-2'>Не доставлено</Text>
+									<Text style={{ color: 'white', fontWeight: 'bold', marginLeft: 8 }}>Не доставлено</Text>
 								</TouchableOpacity>
 							</View>
-							<TouchableOpacity
-								onPress={() => setShowReportForm(false)}
-								className='mt-2 p-2 items-center'
-							>
-								<Text className='text-gray-400'>Отмена</Text>
+							<TouchableOpacity onPress={() => setShowReportForm(false)} style={{ marginTop: 8, padding: 8, alignItems: 'center' }}>
+								<Text style={{ color: colors.textSecondary }}>Отмена</Text>
 							</TouchableOpacity>
 						</View>
 					)}
 
 					{task.status === 'delivered' && (
-						<View className='bg-green-600/20 rounded-lg p-4 border border-green-600/30'>
-							<View className='flex-row items-center gap-2 mb-2'>
-								<Feather name='check-circle' size={20} color='#10B981' />
-								<Text className='text-green-400 font-semibold'>Доставка завершена</Text>
+						<View style={{ backgroundColor: colors.success + '20', borderRadius: 8, padding: 16, borderWidth: 1, borderColor: colors.success + '30' }}>
+							<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+								<Feather name='check-circle' size={20} color={colors.success} />
+								<Text style={{ color: colors.success, fontWeight: '600' }}>Доставка завершена</Text>
 							</View>
-							<Text className='text-green-300 text-sm'>
+							<Text style={{ color: colors.success, fontSize: 14 }}>
 								{new Date(task.deliveredAt!).toLocaleString('ru-RU')}
 							</Text>
 							{task.notes && (
-								<Text className='text-green-200 text-sm mt-2'>{task.notes}</Text>
+								<Text style={{ color: colors.success, fontSize: 14, marginTop: 8 }}>{task.notes}</Text>
 							)}
 						</View>
 					)}
 
 					{task.status === 'failed' && (
-						<View className='bg-red-600/20 rounded-lg p-4 border border-red-600/30'>
-							<View className='flex-row items-center gap-2 mb-2'>
-								<Feather name='x-circle' size={20} color='#EF4444' />
-								<Text className='text-red-400 font-semibold'>Доставка не удалась</Text>
+						<View style={{ backgroundColor: colors.error + '20', borderRadius: 8, padding: 16, borderWidth: 1, borderColor: colors.error + '30' }}>
+							<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+								<Feather name='x-circle' size={20} color={colors.error} />
+								<Text style={{ color: colors.error, fontWeight: '600' }}>Доставка не удалась</Text>
 							</View>
 							{task.notes && (
-								<Text className='text-red-200 text-sm mt-2'>{task.notes}</Text>
+								<Text style={{ color: colors.error, fontSize: 14, marginTop: 8 }}>{task.notes}</Text>
 							)}
 						</View>
 					)}

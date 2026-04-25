@@ -5,6 +5,7 @@ import { CreateDeliveryTask } from '@/components/Deliveries/CreateDeliveryTask'
 import { useAuth } from '@/hooks/useAuth'
 import { useCouriers } from '@/hooks/useCouriers'
 import { useDeliveries } from '@/hooks/useDeliveries'
+import { useTheme } from '@/providers/theme/ThemeProvider'
 import { getDeliveryRate } from '@/shared/types/courier.types'
 import { DeliveryStatus, IDeliveryTask } from '@/shared/types/delivery.types'
 import { Feather } from '@expo/vector-icons'
@@ -86,6 +87,7 @@ const DeliveryCard: FC<{
 	isCourier?: boolean
 }> = ({ delivery, onPress, onDelete, isManager, isCourier }) => {
 	const totalItems = delivery.items.reduce((sum, item) => sum + item.quantity, 0)
+	const { colors } = useTheme()
 	
 	// Рассчитываем зарплату курьера: количество × тариф за каждый товар
 	const calculateCourierEarnings = (): number => {
@@ -108,68 +110,66 @@ const DeliveryCard: FC<{
 	return (
 		<View>
 			<TouchableOpacity onPress={onPress}>
-				<View className='bg-gray-default rounded-lg p-4 mb-3'>
-					<View className='flex-row items-start justify-between mb-2'>
-						<View className='flex-1'>
-							<View className='flex-row items-center gap-2 mb-1'>
-								<Feather name='truck' size={16} color='#BF3335' />
-								<Text className='text-white font-semibold'>{delivery.taskNumber}</Text>
+				<View style={{ backgroundColor: colors.surface, borderRadius: 8, padding: 16, marginBottom: 12 }}>
+					<View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 8 }}>
+						<View style={{ flex: 1 }}>
+							<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+								<Feather name='truck' size={16} color={colors.primary} />
+								<Text style={{ color: colors.text, fontWeight: '600' }}>{delivery.taskNumber}</Text>
 							</View>
-							<Text className='text-gray-400 text-sm'>Курьер: {delivery.courierName}</Text>
-							<Text className='text-gray-400 text-sm'>Доставок: {totalItems} шт.</Text>
+							<Text style={{ color: colors.textSecondary, fontSize: 14 }}>Курьер: {delivery.courierName}</Text>
+							<Text style={{ color: colors.textSecondary, fontSize: 14 }}>Доставок: {totalItems} шт.</Text>
 						</View>
 						<View
-							className='px-3 py-1 rounded-full'
-							style={{ backgroundColor: getStatusColor(delivery.status) + '20' }}
+							style={{ paddingHorizontal: 12, paddingVertical: 4, borderRadius: 999, backgroundColor: getStatusColor(delivery.status) + '20' }}
 						>
 							<Text
-								className='text-xs font-semibold'
-								style={{ color: getStatusColor(delivery.status) }}
+								style={{ fontSize: 12, fontWeight: '600', color: getStatusColor(delivery.status) }}
 							>
 								{getStatusLabel(delivery.status)}
 							</Text>
 						</View>
 					</View>
 
-					<View className='flex-row items-center gap-2 mb-2'>
-						<Feather name='map-pin' size={14} color='#666' />
-						<View className='flex-1'>
+					<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+						<Feather name='map-pin' size={14} color={colors.textSecondary} />
+						<View style={{ flex: 1 }}>
 							{delivery.destinationAddresses && delivery.destinationAddresses.length > 1 ? (
 								<View>
 									{delivery.destinationAddresses.map((addr, idx) => (
-										<Text key={idx} className='text-gray-300 text-sm'>
+										<Text key={idx} style={{ color: colors.text, fontSize: 14 }}>
 											{addr}
 										</Text>
 									))}
 								</View>
 							) : (
-								<Text className='text-gray-300 text-sm' numberOfLines={1}>
+								<Text style={{ color: colors.text, fontSize: 14 }} numberOfLines={1}>
 									{delivery.destinationAddress}
 								</Text>
 							)}
 						</View>
 					</View>
 
-					<View className='flex-row items-center justify-between'>
-						<Text className='text-gray-500 text-xs'>
+					<View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+						<Text style={{ color: colors.textSecondary, fontSize: 12 }}>
 							{new Date(delivery.createdAt).toLocaleDateString('ru-RU')}
 						</Text>
-						<View className='flex-row items-center gap-4'>
+						<View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
 							{isManager && (
 								<>
-									<View className='items-end'>
-										<Text className='text-gray-400 text-xs'>Расходы:</Text>
-										<Text className='text-red-400 font-bold'>{courierRate}₽</Text>
+									<View style={{ alignItems: 'flex-end' }}>
+										<Text style={{ color: colors.textSecondary, fontSize: 12 }}>Расходы:</Text>
+										<Text style={{ color: colors.error, fontWeight: 'bold' }}>{courierRate}₽</Text>
 									</View>
-									<View className='items-end'>
-										<Text className='text-gray-400 text-xs'>Прибыль:</Text>
-										<Text className='text-primary font-bold'>{managerProfit}₽</Text>
+									<View style={{ alignItems: 'flex-end' }}>
+										<Text style={{ color: colors.textSecondary, fontSize: 12 }}>Прибыль:</Text>
+										<Text style={{ color: colors.primary, fontWeight: 'bold' }}>{managerProfit}₽</Text>
 									</View>
 								</>
 							)}
 							{isCourier && (
-								<View className='items-end'>
-									<Text className='text-primary font-bold'>{courierRate}₽</Text>
+								<View style={{ alignItems: 'flex-end' }}>
+									<Text style={{ color: colors.primary, fontWeight: 'bold' }}>{courierRate}₽</Text>
 								</View>
 							)}
 						</View>
@@ -183,23 +183,15 @@ const DeliveryCard: FC<{
 							'Удалить доставку?',
 							'Вы уверены, что хотите удалить эту доставку?',
 							[
-								{
-									text: 'Отмена',
-									onPress: () => {},
-									style: 'cancel'
-								},
-								{
-									text: 'Удалить',
-									onPress: () => onDelete(delivery.id),
-									style: 'destructive'
-								}
+								{ text: 'Отмена', onPress: () => {}, style: 'cancel' },
+								{ text: 'Удалить', onPress: () => onDelete(delivery.id), style: 'destructive' }
 							]
 						)
 					}}
-					className='bg-red-600/20 rounded-lg p-2 mb-3 flex-row items-center justify-center border border-red-600/30'
+					style={{ backgroundColor: colors.error + '20', borderRadius: 8, padding: 8, marginBottom: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.error + '30' }}
 				>
-					<Feather name='trash-2' size={16} color='#EF4444' />
-					<Text className='text-red-400 text-sm font-semibold ml-2'>Удалить</Text>
+					<Feather name='trash-2' size={16} color={colors.error} />
+					<Text style={{ color: colors.error, fontSize: 14, fontWeight: '600', marginLeft: 8 }}>Удалить</Text>
 				</TouchableOpacity>
 			)}
 		</View>
@@ -211,6 +203,7 @@ const Deliveries: FC<Props> = () => {
 	const router = useRouter()
 	const { deliveries, isLoading, fetchDeliveries, deleteDelivery } = useDeliveries()
 	const { couriers } = useCouriers()
+	const { colors } = useTheme()
 	const [activeFilter, setActiveFilter] = useState<FilterTab>('all')
 	const [destinationFilter, setDestinationFilter] = useState<DestinationFilter>('all')
 	const [selectedDelivery, setSelectedDelivery] = useState<IDeliveryTask | null>(null)
@@ -239,7 +232,6 @@ const Deliveries: FC<Props> = () => {
 		}, [fetchDeliveries])
 	)
 
-	// Для курьера показываем только его доставки, для менеджера - все
 	const displayedDeliveries = useMemo(() => {
 		if (isCourier && user) {
 			return deliveries.filter(d => d.courierId === user.uid)
@@ -248,22 +240,15 @@ const Deliveries: FC<Props> = () => {
 	}, [deliveries, isCourier, user])
 
 	const filteredDeliveries = displayedDeliveries.filter(delivery => {
-		// Фильтр по статусу
 		if (activeFilter !== 'all' && delivery.status !== activeFilter) return false
-		
-		// Фильтр по адресу
 		if (destinationFilter !== 'all') {
 			const destInfo = DESTINATIONS.find(d => d.value === destinationFilter)
 			if (destInfo && destInfo.address) {
-				// Проверяем все адреса доставки
 				const addresses = delivery.destinationAddresses || [delivery.destinationAddress]
 				const hasMatchingAddress = addresses.some(addr => addr === destInfo.address)
-				if (!hasMatchingAddress) {
-					return false
-				}
+				if (!hasMatchingAddress) return false
 			}
 		}
-		
 		return true
 	})
 
@@ -279,39 +264,39 @@ const Deliveries: FC<Props> = () => {
 	}
 
 	return (
-		<View className='flex-1 bg-black'>
+		<View style={{ flex: 1, backgroundColor: colors.background }}>
 			<ScrollView contentContainerStyle={{ padding: 16 }}>
 				{/* Header */}
-				<View className='flex-row items-center justify-between mb-6'>
-					<Text className='text-white text-2xl font-bold'>
+				<View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+					<Text style={{ color: colors.text, fontSize: 24, fontWeight: 'bold' }}>
 						{viewMode === 'deliveries' ? 'Доставки' : 'История расчётов'}
 					</Text>
 					{isCourier ? (
 						<TouchableOpacity
 							onPress={() => router.push('/app/profile/profile')}
-							className='bg-primary w-10 h-10 rounded-full items-center justify-center'
+							style={{ backgroundColor: colors.primary, width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' }}
 						>
 							<Feather name='settings' size={20} color='white' />
 						</TouchableOpacity>
 					) : (
-						<View className='flex-row gap-2'>
+						<View style={{ flexDirection: 'row', gap: 8 }}>
 							{viewMode === 'deliveries' && (
 								<>
 									<TouchableOpacity
 										onPress={() => setViewMode('payments')}
-										className='bg-primary w-10 h-10 rounded-full items-center justify-center'
+										style={{ backgroundColor: colors.primary, width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' }}
 									>
 										<Feather name='list' size={20} color='white' />
 									</TouchableOpacity>
 									<TouchableOpacity
 										onPress={() => setShowPaymentModal(true)}
-										className='bg-primary w-10 h-10 rounded-full items-center justify-center'
+										style={{ backgroundColor: colors.primary, width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' }}
 									>
 										<Feather name='credit-card' size={20} color='white' />
 									</TouchableOpacity>
 									<TouchableOpacity
 										onPress={() => setShowCreateModal(true)}
-										className='bg-primary w-10 h-10 rounded-full items-center justify-center'
+										style={{ backgroundColor: colors.primary, width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' }}
 									>
 										<Feather name='plus' size={20} color='white' />
 									</TouchableOpacity>
@@ -320,7 +305,7 @@ const Deliveries: FC<Props> = () => {
 							{viewMode === 'payments' && (
 								<TouchableOpacity
 									onPress={() => setViewMode('deliveries')}
-									className='bg-primary w-10 h-10 rounded-full items-center justify-center'
+									style={{ backgroundColor: colors.primary, width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' }}
 								>
 									<Feather name='arrow-left' size={20} color='white' />
 								</TouchableOpacity>
@@ -329,29 +314,27 @@ const Deliveries: FC<Props> = () => {
 					)}
 				</View>
 
-				{/* Filters and Content */}
 				{viewMode === 'deliveries' ? (
 					<>
 						{/* Filter Tabs */}
 						<ScrollView
 							horizontal
 							showsHorizontalScrollIndicator={false}
-							className='mb-4'
+							style={{ marginBottom: 16 }}
 							contentContainerStyle={{ gap: 8 }}
 						>
 							{filterTabs.map(tab => (
 								<TouchableOpacity
 									key={tab.value}
 									onPress={() => setActiveFilter(tab.value)}
-									className={`px-4 py-2 rounded-full ${
-										activeFilter === tab.value ? 'bg-primary' : 'bg-gray-default'
-									}`}
+									style={{
+										paddingHorizontal: 16,
+										paddingVertical: 8,
+										borderRadius: 999,
+										backgroundColor: activeFilter === tab.value ? colors.primary : colors.surface
+									}}
 								>
-									<Text
-										className={`text-sm font-semibold ${
-											activeFilter === tab.value ? 'text-white' : 'text-gray-400'
-										}`}
-									>
+									<Text style={{ fontSize: 14, fontWeight: '600', color: activeFilter === tab.value ? '#FFFFFF' : colors.textSecondary }}>
 										{tab.label}
 									</Text>
 								</TouchableOpacity>
@@ -362,22 +345,21 @@ const Deliveries: FC<Props> = () => {
 						<ScrollView
 							horizontal
 							showsHorizontalScrollIndicator={false}
-							className='mb-4'
+							style={{ marginBottom: 16 }}
 							contentContainerStyle={{ gap: 8 }}
 						>
 							{DESTINATIONS.map(dest => (
 								<TouchableOpacity
 									key={dest.value}
 									onPress={() => setDestinationFilter(dest.value)}
-									className={`px-4 py-2 rounded-full ${
-										destinationFilter === dest.value ? 'bg-primary' : 'bg-gray-default'
-									}`}
+									style={{
+										paddingHorizontal: 16,
+										paddingVertical: 8,
+										borderRadius: 999,
+										backgroundColor: destinationFilter === dest.value ? colors.primary : colors.surface
+									}}
 								>
-									<Text
-										className={`text-sm font-semibold ${
-											destinationFilter === dest.value ? 'text-white' : 'text-gray-400'
-										}`}
-									>
+									<Text style={{ fontSize: 14, fontWeight: '600', color: destinationFilter === dest.value ? '#FFFFFF' : colors.textSecondary }}>
 										{dest.label}
 									</Text>
 								</TouchableOpacity>
@@ -386,9 +368,9 @@ const Deliveries: FC<Props> = () => {
 
 						{/* Deliveries List */}
 						{isLoading ? (
-							<View className='items-center justify-center py-12'>
-								<ActivityIndicator size='large' color='#BF3335' />
-								<Text className='text-gray-400 mt-4'>Загрузка доставок...</Text>
+							<View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 48 }}>
+								<ActivityIndicator size='large' color={colors.primary} />
+								<Text style={{ color: colors.textSecondary, marginTop: 16 }}>Загрузка доставок...</Text>
 							</View>
 						) : (
 							<View>
@@ -404,9 +386,9 @@ const Deliveries: FC<Props> = () => {
 										/>
 									))
 								) : (
-									<View className='items-center justify-center py-12'>
-										<Feather name='truck' size={48} color='#666' />
-										<Text className='text-gray-500 mt-4'>
+									<View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 48 }}>
+										<Feather name='truck' size={48} color={colors.textSecondary} />
+										<Text style={{ color: colors.textSecondary, marginTop: 16 }}>
 											{activeFilter === 'all'
 												? 'Нет заданий на доставку'
 												: `Нет доставок со статусом "${filterTabs.find(t => t.value === activeFilter)?.label}"`}
@@ -422,61 +404,45 @@ const Deliveries: FC<Props> = () => {
 			</ScrollView>
 
 			{/* Create Delivery Modal */}
-			<Modal
-				visible={showCreateModal}
-				animationType='slide'
-				presentationStyle='pageSheet'
-			>
-				<CreateDeliveryTask
-					couriers={couriers.map(c => ({ id: c.id, name: c.name }))}
-				/>
-				<View className='absolute top-12 right-4 z-10'>
+			<Modal visible={showCreateModal} animationType='slide' presentationStyle='pageSheet'>
+				<CreateDeliveryTask couriers={couriers.map(c => ({ id: c.id, name: c.name }))} />
+				<View style={{ position: 'absolute', top: 48, right: 16, zIndex: 10 }}>
 					<TouchableOpacity
 						onPress={() => setShowCreateModal(false)}
-						className='bg-gray-600 w-8 h-8 rounded-full items-center justify-center'
+						style={{ backgroundColor: colors.surface, width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' }}
 					>
-						<Feather name='x' size={16} color='white' />
+						<Feather name='x' size={16} color={colors.text} />
 					</TouchableOpacity>
 				</View>
 			</Modal>
 
 			{/* Delivery Details Modal */}
-			<Modal
-				visible={!!selectedDelivery}
-				animationType='slide'
-				presentationStyle='pageSheet'
-			>
+			<Modal visible={!!selectedDelivery} animationType='slide' presentationStyle='pageSheet'>
 				{selectedDelivery && (
 					<CourierDeliveryReport
 						task={selectedDelivery}
 						onReportSubmitted={() => {
-							// Фоновый рефетч без показа лоадера
 							fetchDeliveries()
 							setSelectedDelivery(null)
 						}}
 					/>
 				)}
-				<View className='absolute top-12 right-4 z-10'>
+				<View style={{ position: 'absolute', top: 48, right: 16, zIndex: 10 }}>
 					<TouchableOpacity
 						onPress={() => {
 							setSelectedDelivery(null)
-							// Фоновый рефетч
 							fetchDeliveries()
 						}}
-						className='bg-gray-600 w-8 h-8 rounded-full items-center justify-center'
+						style={{ backgroundColor: colors.surface, width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' }}
 					>
-						<Feather name='x' size={16} color='white' />
+						<Feather name='x' size={16} color={colors.text} />
 					</TouchableOpacity>
 				</View>
 			</Modal>
 
 			{/* Payment Calculator Modal */}
-			<Modal
-				visible={showPaymentModal}
-				animationType='slide'
-				presentationStyle='pageSheet'
-			>
-				<CourierPaymentCalculator 
+			<Modal visible={showPaymentModal} animationType='slide' presentationStyle='pageSheet'>
+				<CourierPaymentCalculator
 					onClose={() => setShowPaymentModal(false)}
 					initialPeriodFrom={paymentPeriodFrom}
 					initialPeriodTo={paymentPeriodTo}
@@ -485,12 +451,12 @@ const Deliveries: FC<Props> = () => {
 						setPaymentPeriodTo(to)
 					}}
 				/>
-				<View className='absolute top-12 right-4 z-10'>
+				<View style={{ position: 'absolute', top: 48, right: 16, zIndex: 10 }}>
 					<TouchableOpacity
 						onPress={() => setShowPaymentModal(false)}
-						className='bg-gray-600 w-8 h-8 rounded-full items-center justify-center'
+						style={{ backgroundColor: colors.surface, width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' }}
 					>
-						<Feather name='x' size={16} color='white' />
+						<Feather name='x' size={16} color={colors.text} />
 					</TouchableOpacity>
 				</View>
 			</Modal>

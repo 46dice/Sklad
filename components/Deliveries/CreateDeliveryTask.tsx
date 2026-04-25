@@ -1,5 +1,6 @@
 import { useProducts } from '@/components/Products/hooks/useProducts'
 import { useDeliveries } from '@/hooks/useDeliveries'
+import { useTheme } from '@/providers/theme/ThemeProvider'
 import { DELIVERY_RATES } from '@/shared/types/courier.types'
 import { DeliveryDestination, IDeliveryItem, INewDeliveryForm } from '@/shared/types/delivery.types'
 import { Button } from '@/shared/ui/Button'
@@ -33,6 +34,7 @@ export const CreateDeliveryTask: FC<Props> = ({ couriers }) => {
 	const router = useRouter()
 	const { products } = useProducts()
 	const { createDeliveryTask } = useDeliveries()
+	const { colors } = useTheme()
 	const [isLoading, setIsLoading] = useState(false)
 
 	const [formData, setFormData] = useState<INewDeliveryForm>({
@@ -171,33 +173,33 @@ export const CreateDeliveryTask: FC<Props> = ({ couriers }) => {
 	return (
 		<KeyboardAvoidingView
 			behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-			className='flex-1'
+			style={{ flex: 1 }}
 		>
-			<ScrollView className='flex-1 bg-black' contentContainerStyle={{ padding: 16 }}>
-				<Text className='text-white text-2xl font-bold mb-4'>Новое задание на доставку</Text>
+			<ScrollView style={{ flex: 1, backgroundColor: colors.background }} contentContainerStyle={{ padding: 16 }}>
+				<Text style={{ color: colors.text, fontSize: 24, fontWeight: 'bold', marginBottom: 16 }}>Новое задание на доставку</Text>
 
 				{/* Выбор курьера */}
-				<View className='mb-4'>
-					<Text className='text-gray-300 text-sm font-medium mb-2'>Курьер *</Text>
+				<View style={{ marginBottom: 16 }}>
+					<Text style={{ color: colors.textSecondary, fontSize: 14, fontWeight: '500', marginBottom: 8 }}>Курьер *</Text>
 					<TouchableOpacity
 						onPress={() => setShowCourierDropdown(!showCourierDropdown)}
-						className='bg-gray-default p-3 rounded-lg flex-row items-center justify-between'
+						style={{ backgroundColor: colors.surface, padding: 12, borderRadius: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
 					>
-						<Text className={`text-base ${formData.courierName ? 'text-white' : 'text-gray-500'}`}>
+						<Text style={{ fontSize: 16, color: formData.courierName ? colors.text : colors.textSecondary }}>
 							{formData.courierName || 'Выберите курьера'}
 						</Text>
-						<Feather name={showCourierDropdown ? 'chevron-up' : 'chevron-down'} size={20} color='#666' />
+						<Feather name={showCourierDropdown ? 'chevron-up' : 'chevron-down'} size={20} color={colors.textSecondary} />
 					</TouchableOpacity>
 
 					{showCourierDropdown && (
-						<View className='bg-gray-default mt-1 rounded-lg overflow-hidden'>
+						<View style={{ backgroundColor: colors.surface, marginTop: 4, borderRadius: 8, overflow: 'hidden' }}>
 							{couriers.map(courier => (
 								<TouchableOpacity
 									key={courier.id}
 									onPress={() => handleSelectCourier(courier.id, courier.name)}
-									className='p-3 border-b border-gray-600'
+									style={{ padding: 12, borderBottomWidth: 1, borderBottomColor: colors.border }}
 								>
-									<Text className='text-white'>{courier.name}</Text>
+									<Text style={{ color: colors.text }}>{courier.name}</Text>
 								</TouchableOpacity>
 							))}
 						</View>
@@ -206,13 +208,13 @@ export const CreateDeliveryTask: FC<Props> = ({ couriers }) => {
 
 				{/* Адрес доставки */}
 				{selectedProducts.length > 0 && (
-					<View className='mb-4'>
-						<Text className='text-gray-300 text-sm font-medium mb-2'>Адреса доставки</Text>
-						<View className='bg-gray-default rounded-lg p-3'>
+					<View style={{ marginBottom: 16 }}>
+						<Text style={{ color: colors.textSecondary, fontSize: 14, fontWeight: '500', marginBottom: 8 }}>Адреса доставки</Text>
+						<View style={{ backgroundColor: colors.surface, borderRadius: 8, padding: 12 }}>
 							{uniqueAddresses.map((address, idx) => (
-								<View key={idx} className='flex-row items-start gap-2 pb-2 mb-2 border-b border-gray-600 last:border-b-0 last:mb-0 last:pb-0'>
-									<Feather name='map-pin' size={14} color='#BF3335' style={{ marginTop: 2 }} />
-									<Text className='text-white text-sm flex-1'>{address}</Text>
+								<View key={idx} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8, paddingBottom: 8, marginBottom: 8, borderBottomWidth: idx < uniqueAddresses.length - 1 ? 1 : 0, borderBottomColor: colors.border }}>
+									<Feather name='map-pin' size={14} color={colors.primary} style={{ marginTop: 2 }} />
+									<Text style={{ color: colors.text, fontSize: 14, flex: 1 }}>{address}</Text>
 								</View>
 							))}
 						</View>
@@ -220,47 +222,39 @@ export const CreateDeliveryTask: FC<Props> = ({ couriers }) => {
 				)}
 
 				{/* Товары */}
-				<View className='mb-4'>
-					<Text className='text-gray-300 text-sm font-medium mb-2'>Позиции *</Text>
-					<View className='bg-gray-default rounded-lg p-3'>
+				<View style={{ marginBottom: 16 }}>
+					<Text style={{ color: colors.textSecondary, fontSize: 14, fontWeight: '500', marginBottom: 8 }}>Позиции *</Text>
+					<View style={{ backgroundColor: colors.surface, borderRadius: 8, padding: 12 }}>
 						{deliveryProducts.length > 0 ? (
 							deliveryProducts.map(product => {
 								const selected = selectedProducts.find(p => p.id === product.id)
 								return (
-									<View key={product.id} className='flex-row items-center gap-2 pb-3 mb-3 border-b border-gray-600 last:border-b-0 last:mb-0 last:pb-0'>
-										<View className='flex-1'>
-											<Text className='text-white font-medium text-sm'>{product.name}</Text>
+									<View key={product.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingBottom: 12, marginBottom: 12, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+										<View style={{ flex: 1 }}>
+											<Text style={{ color: colors.text, fontWeight: '500', fontSize: 14 }}>{product.name}</Text>
 										</View>
-										<View className='flex-row items-center gap-2'>
+										<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
 											<TouchableOpacity
-												onPress={() => handleProductQuantityChange(
-													product.id, 
-													Math.max(0, (selected?.quantity || 0) - 1),
-													selected?.deliveryCost || product.price
-												)}
-												className='bg-gray-600 w-7 h-7 rounded items-center justify-center'
+												onPress={() => handleProductQuantityChange(product.id, Math.max(0, (selected?.quantity || 0) - 1), selected?.deliveryCost || product.price)}
+												style={{ backgroundColor: colors.border, width: 28, height: 28, borderRadius: 4, alignItems: 'center', justifyContent: 'center' }}
 											>
-												<Text className='text-white'>−</Text>
+												<Text style={{ color: colors.text }}>−</Text>
 											</TouchableOpacity>
-											<Text className='text-white font-semibold w-8 text-center'>
+											<Text style={{ color: colors.text, fontWeight: '600', width: 32, textAlign: 'center' }}>
 												{selected?.quantity || 0}
 											</Text>
 											<TouchableOpacity
-												onPress={() => handleProductQuantityChange(
-													product.id, 
-													(selected?.quantity || 0) + 1,
-													selected?.deliveryCost || product.price
-												)}
-												className='bg-primary w-7 h-7 rounded items-center justify-center'
+												onPress={() => handleProductQuantityChange(product.id, (selected?.quantity || 0) + 1, selected?.deliveryCost || product.price)}
+												style={{ backgroundColor: colors.primary, width: 28, height: 28, borderRadius: 4, alignItems: 'center', justifyContent: 'center' }}
 											>
-												<Text className='text-white'>+</Text>
+												<Text style={{ color: 'white' }}>+</Text>
 											</TouchableOpacity>
 										</View>
-										<View className='w-20'>
+										<View style={{ width: 80 }}>
 											<TextInput
-												className='text-white'
+												style={{ color: colors.text }}
 												placeholder={`${product.price}₽`}
-												placeholderTextColor='#999'
+												placeholderTextColor={colors.textSecondary}
 												value={selected?.deliveryCost ? selected.deliveryCost.toString() : ''}
 												onChangeText={val => {
 													const cost = parseFloat(val) || product.price
@@ -275,38 +269,38 @@ export const CreateDeliveryTask: FC<Props> = ({ couriers }) => {
 								)
 							})
 						) : (
-							<Text className='text-gray-400 text-sm'>Нет доступных услуг доставки</Text>
+							<Text style={{ color: colors.textSecondary, fontSize: 14 }}>Нет доступных услуг доставки</Text>
 						)}
 					</View>
 				</View>
 
 				{/* Выбранные товары */}
 				{selectedProducts.length > 0 && (
-					<View className='mb-4 bg-gray-default rounded-lg p-4'>
-						<Text className='text-white font-semibold mb-3'>К доставке</Text>
+					<View style={{ marginBottom: 16, backgroundColor: colors.surface, borderRadius: 8, padding: 16 }}>
+						<Text style={{ color: colors.text, fontWeight: '600', marginBottom: 12 }}>К доставке</Text>
 						{selectedProducts.map(product => (
-							<View key={product.id} className='flex-row justify-between items-center pb-2 mb-2 border-b border-gray-600 last:border-b-0 last:mb-0 last:pb-0'>
-								<Text className='text-white text-sm flex-1'>{product.name}</Text>
-								<Text className='text-gray-300 text-sm w-12 text-center'>{product.quantity}</Text>
-								<Text className='text-primary text-sm w-16 text-right font-semibold'>
+							<View key={product.id} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 8, marginBottom: 8, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+								<Text style={{ color: colors.text, fontSize: 14, flex: 1 }}>{product.name}</Text>
+								<Text style={{ color: colors.textSecondary, fontSize: 14, width: 48, textAlign: 'center' }}>{product.quantity}</Text>
+								<Text style={{ color: colors.primary, fontSize: 14, width: 64, textAlign: 'right', fontWeight: '600' }}>
 									{(product.quantity * product.deliveryCost).toFixed(0)}₽
 								</Text>
 							</View>
 						))}
-						<View className='mt-3 pt-3 border-t border-gray-600 flex-row justify-between'>
-							<Text className='text-white font-semibold'>Общая стоимость:</Text>
-							<Text className='text-primary font-bold text-lg'>{totalCost.toFixed(0)}₽</Text>
+						<View style={{ marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.border, flexDirection: 'row', justifyContent: 'space-between' }}>
+							<Text style={{ color: colors.text, fontWeight: '600' }}>Общая стоимость:</Text>
+							<Text style={{ color: colors.primary, fontWeight: 'bold', fontSize: 18 }}>{totalCost.toFixed(0)}₽</Text>
 						</View>
 					</View>
 				)}
 
 				{/* Заметки */}
-				<View className='mb-6'>
-					<Text className='text-gray-300 text-sm font-medium mb-2'>Заметки</Text>
+				<View style={{ marginBottom: 24 }}>
+					<Text style={{ color: colors.textSecondary, fontSize: 14, fontWeight: '500', marginBottom: 8 }}>Заметки</Text>
 					<TextInput
-						className='bg-gray-default text-white p-3 rounded-lg'
+						style={{ backgroundColor: colors.surface, color: colors.text, padding: 12, borderRadius: 8 }}
 						placeholder='Дополнительная информация для курьера...'
-						placeholderTextColor='#666'
+						placeholderTextColor={colors.textSecondary}
 						multiline
 						numberOfLines={3}
 						value={formData.notes}
@@ -314,7 +308,6 @@ export const CreateDeliveryTask: FC<Props> = ({ couriers }) => {
 					/>
 				</View>
 
-				{/* Кнопка создания */}
 				<Button
 					onPress={handleSubmit}
 					isLoading={isLoading}

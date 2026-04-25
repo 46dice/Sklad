@@ -1,5 +1,6 @@
 import { ProductMovements } from '@/components/Products/ProductMovements'
 import { useProducts } from '@/components/Products/hooks/useProducts'
+import { useTheme } from '@/providers/theme/ThemeProvider'
 import { Feather } from '@expo/vector-icons'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { FC, useMemo } from 'react'
@@ -11,62 +12,58 @@ const ProductDetail: FC<Props> = () => {
 	const { id } = useLocalSearchParams()
 	const router = useRouter()
 	const { products } = useProducts()
+	const { colors } = useTheme()
 
-	const product = useMemo(() => {
-		return products.find(p => p.id === id)
-	}, [products, id])
+	const product = useMemo(() => products.find(p => p.id === id), [products, id])
 
 	if (!product) {
 		return (
-			<View className='flex-1 bg-black'>
-				<View className='flex-row items-center p-4 border-b border-gray-700'>
+			<View style={{ flex: 1, backgroundColor: colors.background }}>
+				<View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: colors.border }}>
 					<TouchableOpacity onPress={() => router.back()}>
-						<Feather name='arrow-left' size={24} color='white' />
+						<Feather name='arrow-left' size={24} color={colors.text} />
 					</TouchableOpacity>
-					<Text className='text-white text-lg font-semibold ml-4'>Товар</Text>
+					<Text style={{ color: colors.text, fontSize: 18, fontWeight: '600', marginLeft: 16 }}>Товар</Text>
 				</View>
-				<View className='flex-1 items-center justify-center'>
-					<Text className='text-gray-400'>Товар не найден</Text>
+				<View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+					<Text style={{ color: colors.textSecondary }}>Товар не найден</Text>
 				</View>
 			</View>
 		)
 	}
 
-	const isLowStock = product.quantity <= 5
-
 	return (
-		<ScrollView className='flex-1 bg-black' contentContainerStyle={{ padding: 16 }}>
+		<ScrollView style={{ flex: 1, backgroundColor: colors.background }} contentContainerStyle={{ padding: 16 }}>
 			{/* Header */}
-			<View className='flex-row items-center justify-between mb-6'>
+			<View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
 				<TouchableOpacity onPress={() => router.back()}>
-					<Feather name='arrow-left' size={24} color='white' />
+					<Feather name='arrow-left' size={24} color={colors.text} />
 				</TouchableOpacity>
-				<Text className='text-white text-xl font-bold flex-1 ml-4'>
+				<Text style={{ color: colors.text, fontSize: 20, fontWeight: 'bold', flex: 1, marginLeft: 16 }}>
 					{product.name}
 				</Text>
 			</View>
 
 			{/* Product Info */}
-			<View className='bg-gray-default rounded-lg p-4 mb-4'>
-				<View className='flex-row items-start justify-between mb-4'>
-					<View className='flex-1'>
-						<Text className='text-white text-2xl font-bold mb-2'>{product.name}</Text>
-						<Text className='text-gray-400 text-sm mb-1'>SKU: {product.sku}</Text>
+			<View style={{ backgroundColor: colors.surface, borderRadius: 8, padding: 16, marginBottom: 16 }}>
+				<View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
+					<View style={{ flex: 1 }}>
+						<Text style={{ color: colors.text, fontSize: 22, fontWeight: 'bold', marginBottom: 8 }}>{product.name}</Text>
+						<Text style={{ color: colors.textSecondary, fontSize: 14, marginBottom: 4 }}>SKU: {product.sku}</Text>
 						{product.category && (
-							<Text className='text-gray-400 text-sm mb-1'>Категория: {product.category}</Text>
+							<Text style={{ color: colors.textSecondary, fontSize: 14, marginBottom: 4 }}>Категория: {product.category}</Text>
 						)}
 					</View>
-					<View className='items-end'>
-						<Text className='text-primary text-2xl font-bold'>{product.price}₽</Text>
-						<Text className='text-gray-400 text-sm'>за единицу</Text>
+					<View style={{ alignItems: 'flex-end' }}>
+						<Text style={{ color: colors.primary, fontSize: 22, fontWeight: 'bold' }}>{product.price}₽</Text>
+						<Text style={{ color: colors.textSecondary, fontSize: 14 }}>за единицу</Text>
 					</View>
 				</View>
 
-				{/* Description */}
 				{product.description && (
-					<View className='mt-4'>
-						<Text className='text-gray-300 text-sm font-medium mb-2'>Описание</Text>
-						<Text className='text-gray-400 text-sm leading-5'>{product.description}</Text>
+					<View style={{ marginTop: 16 }}>
+						<Text style={{ color: colors.text, fontSize: 14, fontWeight: '500', marginBottom: 8 }}>Описание</Text>
+						<Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20 }}>{product.description}</Text>
 					</View>
 				)}
 			</View>
@@ -75,16 +72,13 @@ const ProductDetail: FC<Props> = () => {
 			<ProductMovements productId={product.id} productName={product.name} />
 
 			{/* Actions */}
-			<View className='gap-3 mt-6'>
+			<View style={{ gap: 12, marginTop: 24 }}>
 				<TouchableOpacity
-					onPress={() => {
-						// TODO: Открыть форму редактирования товара
-						alert('Функция редактирования будет добавлена позже')
-					}}
-					className='bg-gray-600 p-4 rounded-lg flex-row items-center justify-center'
+					onPress={() => alert('Функция редактирования будет добавлена позже')}
+					style={{ backgroundColor: colors.surface, padding: 16, borderRadius: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}
 				>
-					<Feather name='edit' size={20} color='white' />
-					<Text className='text-white font-bold text-lg ml-2'>Редактировать</Text>
+					<Feather name='edit' size={20} color={colors.text} />
+					<Text style={{ color: colors.text, fontWeight: 'bold', fontSize: 18, marginLeft: 8 }}>Редактировать</Text>
 				</TouchableOpacity>
 			</View>
 		</ScrollView>

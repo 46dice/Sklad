@@ -1,3 +1,4 @@
+import { useTheme } from '@/providers/theme/ThemeProvider'
 import cn from 'clsx'
 import { JSX } from 'react'
 import {
@@ -10,7 +11,6 @@ import {
 import { Text, TextInput, TextInputProps, View } from 'react-native'
 
 interface Props<T extends FieldValues> extends TextInputProps {
-	// Наследуем все пропсы TextInput
 	control: Control<T>
 	name: FieldPath<T>
 	rules?: Omit<
@@ -29,6 +29,8 @@ export const FormInput = <T extends Record<string, any>>({
 	boxClassname,
 	...rest
 }: Props<T>): JSX.Element => {
+	const { colors } = useTheme()
+
 	return (
 		<Controller
 			control={control}
@@ -40,22 +42,28 @@ export const FormInput = <T extends Record<string, any>>({
 			}) => (
 				<>
 					<View
-						className={cn(
-							'bg-[#232323] w-full border rounded-lg pb-4 pt-2.5 px-4',
-							boxClassname,
-							error ? 'border-red' : 'border-transparent'
-						)}
+						style={{
+							backgroundColor: colors.surface,
+							borderWidth: 1,
+							borderColor: error ? '#EF4444' : colors.border,
+							borderRadius: 8,
+							paddingBottom: 16,
+							paddingTop: 10,
+							paddingHorizontal: 16
+						}}
+						className={cn(boxClassname)}
 					>
 						<TextInput
 							autoCapitalize={'none'}
 							onChangeText={onChange}
 							onBlur={onBlur}
 							value={(value || '').toString()}
-							className='text-white text-base placeholder:color-gray-300'
+							style={{ color: colors.text, fontSize: 16 }}
+							placeholderTextColor={colors.textSecondary}
 							{...rest}
 						/>
 					</View>
-					{error && <Text className='text-red mb-2'>{error.message}</Text>}
+					{error && <Text style={{ color: '#EF4444' }} className='mb-2'>{error.message}</Text>}
 				</>
 			)}
 		/>

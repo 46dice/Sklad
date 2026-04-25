@@ -1,3 +1,4 @@
+import { useTheme } from '@/providers/theme/ThemeProvider'
 import { INewProductForm } from '@/shared/types/products.types'
 import { Feather } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
@@ -19,6 +20,7 @@ export default function ProductList({
 }: ProductListProps) {
 	const router = useRouter()
 	const { setEditingProductId, updateFormState } = useProductStore()
+	const { colors } = useTheme()
 
 	const handleEditPress = (product: INewProductForm & { id: string }) => {
 		setEditingProductId(product.id)
@@ -35,18 +37,18 @@ export default function ProductList({
 
 	if (isLoading) {
 		return (
-			<View className='flex-1 items-center justify-center'>
-				<Text className='text-white'>Загрузка товаров...</Text>
+			<View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+				<Text style={{ color: colors.text }}>Загрузка товаров...</Text>
 			</View>
 		)
 	}
 
 	if (products.length === 0) {
 		return (
-			<View className='flex-1 items-center justify-center'>
-				<Feather name='inbox' size={48} color='#666' />
-				<Text className='text-gray-500 mt-4'>Нет товаров</Text>
-				<Text className='text-gray-500 text-sm'>Добавьте первый товар</Text>
+			<View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+				<Feather name='inbox' size={48} color={colors.textSecondary} />
+				<Text style={{ color: colors.textSecondary, marginTop: 16 }}>Нет товаров</Text>
+				<Text style={{ color: colors.textSecondary, fontSize: 14 }}>Добавьте первый товар</Text>
 			</View>
 		)
 	}
@@ -54,54 +56,41 @@ export default function ProductList({
 	return (
 		<FlatList
 			data={products}
-			keyExtractor={(item, index) =>
-				item.id ? item.id.toString() : index.toString()
-			}
+			keyExtractor={(item, index) => item.id ? item.id.toString() : index.toString()}
 			renderItem={({ item }) => (
-				<View className='border-b border-gray-default px-4 py-4'>
-					<View className='flex-row items-center justify-between mb-2'>
-						<View className='flex-1'>
-							<Text className='text-white font-semibold mb-1'>{item.name}</Text>
-							<Text className='text-gray-500 text-sm'>SKU: {item.sku}</Text>
+				<View style={{ borderBottomWidth: 1, borderBottomColor: colors.border, paddingHorizontal: 16, paddingVertical: 16 }}>
+					<View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+						<View style={{ flex: 1 }}>
+							<Text style={{ color: colors.text, fontWeight: '600', marginBottom: 4 }}>{item.name}</Text>
+							<Text style={{ color: colors.textSecondary, fontSize: 14 }}>SKU: {item.sku}</Text>
 						</View>
-						<Text className='text-primary font-bold'>{item.price} ₽</Text>
+						<Text style={{ color: colors.primary, fontWeight: 'bold' }}>{item.price} ₽</Text>
 					</View>
 
 					{item.description && (
-						<Text className='text-gray-500 text-sm mb-3'>{item.description}</Text>
+						<Text style={{ color: colors.textSecondary, fontSize: 14, marginBottom: 12 }}>{item.description}</Text>
 					)}
-					<View className='flex-row gap-2'>
+					<View style={{ flexDirection: 'row', gap: 8 }}>
 						<Pressable
 							onPress={() => item.id && router.push(`/app/product/${item.id}`)}
-							className='bg-blue-600 rounded-lg py-2 px-3 flex-row items-center justify-center gap-1'
+							style={{ backgroundColor: '#2563eb', borderRadius: 8, paddingVertical: 8, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4 }}
 						>
 							<Feather name='eye' size={14} color='white' />
-							<Text className='text-white font-semibold text-xs'>Подробнее</Text>
+							<Text style={{ color: 'white', fontWeight: '600', fontSize: 12 }}>Подробнее</Text>
 						</Pressable>
-						{/* <Pressable
-							onPress={() =>
-								item.id && handleQuickSale({ ...item, id: item.id })
-							}
-							className='flex-1 bg-primary rounded-lg py-2 flex-row items-center justify-center gap-2'
-						>
-							<Feather name='check-circle' size={16} color='white' />
-							<Text className='text-white font-semibold'>Продать</Text>
-						</Pressable> */}
 						<Pressable
-							onPress={() =>
-								item.id && handleEditPress({ ...item, id: item.id })
-							}
-							className='flex-1 bg-red-500 rounded-lg py-2 flex-row items-center justify-center gap-2'
+							onPress={() => item.id && handleEditPress({ ...item, id: item.id })}
+							style={{ flex: 1, backgroundColor: colors.primary, borderRadius: 8, paddingVertical: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}
 						>
 							<Feather name='edit-2' size={16} color='white' />
-							<Text className='text-white font-semibold'>Изменить</Text>
+							<Text style={{ color: 'white', fontWeight: '600' }}>Изменить</Text>
 						</Pressable>
 						<Pressable
 							onPress={() => item.id && onDelete({ ...item, id: item.id })}
-							className='flex-1 bg-red-500 rounded-lg py-2 flex-row items-center justify-center gap-2'
+							style={{ flex: 1, backgroundColor: '#ef4444', borderRadius: 8, paddingVertical: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}
 						>
 							<Feather name='trash-2' size={16} color='white' />
-							<Text className='text-white font-semibold'>Удалить</Text>
+							<Text style={{ color: 'white', fontWeight: '600' }}>Удалить</Text>
 						</Pressable>
 					</View>
 				</View>

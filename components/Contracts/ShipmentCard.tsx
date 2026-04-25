@@ -1,3 +1,4 @@
+import { useTheme } from '@/providers/theme/ThemeProvider'
 import { IShipment } from '@/shared/types/shipment.types'
 import { Feather } from '@expo/vector-icons'
 import { Pressable, Text, View } from 'react-native'
@@ -17,68 +18,62 @@ export const ShipmentCard = ({
 	onDelete,
 	onComplete
 }: ShipmentCardProps) => {
+	const { colors } = useTheme()
 	const createdDate = new Date(shipment.createdAt).toLocaleDateString('ru-RU')
 	const statusLabel = shipment.status === 'completed' ? 'Завершен' : 'Черновик'
-	const statusColor = shipment.status === 'completed' ? 'bg-green-600' : 'bg-yellow-600'
+	const statusBg = shipment.status === 'completed' ? '#16a34a' : '#ca8a04'
 
 	return (
 		<Pressable
 			onPress={onPress}
-			className='bg-gray-default rounded-lg p-4 mb-3 border border-gray-600'
+			style={{ backgroundColor: colors.surface, borderRadius: 8, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: colors.border }}
 		>
-			<View className='flex-row items-start justify-between mb-2'>
-				<View className='flex-1'>
-					<Text className='text-white font-bold text-base'>{shipment.actNumber}</Text>
-					<Text className='text-gray-400 text-sm mt-1'>{shipment.clientName}</Text>
-					<Text className='text-gray-500 text-xs mt-1'>ИНН: {shipment.clientInn}</Text>
+			<View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 8 }}>
+				<View style={{ flex: 1 }}>
+					<Text style={{ color: colors.text, fontWeight: 'bold', fontSize: 16 }}>{shipment.actNumber}</Text>
+					<Text style={{ color: colors.textSecondary, fontSize: 14, marginTop: 4 }}>{shipment.clientName}</Text>
+					<Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 4 }}>ИНН: {shipment.clientInn}</Text>
 				</View>
-				<View className={`${statusColor} rounded-full px-3 py-1`}>
-					<Text className='text-white text-xs font-semibold'>{statusLabel}</Text>
+				<View style={{ backgroundColor: statusBg, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 4 }}>
+					<Text style={{ color: 'white', fontSize: 12, fontWeight: '600' }}>{statusLabel}</Text>
 				</View>
 			</View>
 
-			<View className='flex-row items-center justify-between mb-3 pt-2 border-t border-gray-600'>
+			<View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, paddingTop: 8, borderTopWidth: 1, borderTopColor: colors.border }}>
 				<View>
-					<Text className='text-gray-500 text-xs'>Сумма</Text>
-					<Text className='text-primary font-bold text-lg'>
+					<Text style={{ color: colors.textSecondary, fontSize: 12 }}>Сумма</Text>
+					<Text style={{ color: colors.primary, fontWeight: 'bold', fontSize: 18 }}>
 						{shipment.totalAmount.toFixed(0)}₽
 					</Text>
 				</View>
 				<View>
-					<Text className='text-gray-500 text-xs'>Услуг</Text>
-					<Text className='text-white font-semibold text-lg'>
+					<Text style={{ color: colors.textSecondary, fontSize: 12 }}>Услуг</Text>
+					<Text style={{ color: colors.text, fontWeight: '600', fontSize: 18 }}>
 						{shipment.items.length}
 					</Text>
 				</View>
 				<View>
-					<Text className='text-gray-500 text-xs'>Дата</Text>
-					<Text className='text-white font-semibold text-sm'>{createdDate}</Text>
+					<Text style={{ color: colors.textSecondary, fontSize: 12 }}>Дата</Text>
+					<Text style={{ color: colors.text, fontWeight: '600', fontSize: 14 }}>{createdDate}</Text>
 				</View>
 			</View>
 
-			<View className='flex-row gap-2'>
-				{/* <Pressable
-					onPress={onEdit}
-					className='flex-1 bg-blue-600 rounded-lg py-2 flex-row items-center justify-center gap-1'
-				>
-					<Feather name='edit-2' size={14} color='white' />
-					<Text className='text-white font-semibold text-xs'>Изменить</Text>
-				</Pressable> */}
+			<View style={{ flexDirection: 'row', gap: 8 }}>
 				{shipment.status === 'draft' && onComplete && (
 					<Pressable
 						onPress={onComplete}
-						className='flex-1 bg-green-600 rounded-lg py-2 flex-row items-center justify-center gap-1'
+						style={{ flex: 1, backgroundColor: '#16a34a', borderRadius: 8, paddingVertical: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4 }}
 					>
 						<Feather name='check' size={14} color='white' />
-						<Text className='text-white font-semibold text-xs'>Завершить</Text>
+						<Text style={{ color: 'white', fontWeight: '600', fontSize: 12 }}>Завершить</Text>
 					</Pressable>
 				)}
 				<Pressable
 					onPress={onDelete}
-					className='flex-1 bg-red-500 rounded-lg py-2 flex-row items-center justify-center gap-1'
+					style={{ flex: 1, backgroundColor: '#ef4444', borderRadius: 8, paddingVertical: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4 }}
 				>
 					<Feather name='trash-2' size={14} color='white' />
-					<Text className='text-white font-semibold text-xs'>Удалить</Text>
+					<Text style={{ color: 'white', fontWeight: '600', fontSize: 12 }}>Удалить</Text>
 				</Pressable>
 			</View>
 		</Pressable>

@@ -1,6 +1,7 @@
 import SignOut from '@/components/screens/profile/SignOut'
 import { useAuth } from '@/hooks/useAuth'
 import { useUserProfile } from '@/hooks/useUserProfile'
+import { useTheme } from '@/providers/theme/ThemeProvider'
 import { Colors } from '@/shared/constants/Colors'
 import { IUserProfile } from '@/shared/types/user.types'
 import { Button } from '@/shared/ui/Button'
@@ -8,11 +9,12 @@ import { FormInput } from '@/shared/ui/FormInput'
 import { MaterialIcons } from '@expo/vector-icons'
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { Pressable, ScrollView, Text, View } from 'react-native'
+import { Pressable, ScrollView, Switch, Text, View } from 'react-native'
 
 export default function Profile() {
 	const { user, userProfile, isLoading: authLoading } = useAuth()
 	const { updateUserProfile } = useUserProfile()
+	const { colors, theme, toggleTheme } = useTheme()
 	const [isEditing, setIsEditing] = useState(false)
 	const [initialData, setInitialData] = useState<IUserProfile | null>(null)
 	const [isSaving, setIsSaving] = useState(false)
@@ -67,16 +69,16 @@ export default function Profile() {
 		return (
 			<View
 				className='flex-1 items-center justify-center'
-				style={{ backgroundColor: Colors.black }}
+				style={{ backgroundColor: colors.background }}
 			>
-				<Text className='text-white text-lg'>Загрузка...</Text>
+				<Text style={{ color: colors.text }} className='text-lg'>Загрузка...</Text>
 			</View>
 		)
 	}
 
 	return (
 		<ScrollView
-			style={{ backgroundColor: Colors.black }}
+			style={{ backgroundColor: colors.background }}
 			className='flex-1'
 			contentContainerClassName='pb-10'
 		>
@@ -97,22 +99,21 @@ export default function Profile() {
 					/>
 				</View>
 
-				<Text className='text-2xl font-bold text-white mb-2'>
-					{watchedFields?.name ||
-						'Пользователь'}
+				<Text className='text-2xl font-bold mb-2' style={{ color: colors.text }}>
+					{watchedFields?.name || 'Пользователь'}
 				</Text>
 
-				<Text className='text-base text-gray-400 mb-2'>{user?.email}</Text>
+				<Text className='text-base mb-2' style={{ color: colors.textSecondary }}>{user?.email}</Text>
 				
 				{/* Отображение роли */}
 				{userProfile?.role && (
-					<View className='flex-row items-center gap-2 mt-2 px-4 py-2 rounded-full bg-primary/20'>
+					<View className='flex-row items-center gap-2 mt-2 px-4 py-2 rounded-full'>
 						<MaterialIcons 
 							name={userProfile.role === 'manager' ? 'business-center' : 'local-shipping'} 
 							size={16} 
 							color={Colors.primary} 
 						/>
-						<Text className='text-primary font-semibold'>
+						<Text style={{ color: Colors.primary }} className='font-semibold'>
 							{userProfile.role === 'manager' ? 'Менеджер' : 'Курьер'}
 						</Text>
 					</View>
@@ -122,7 +123,7 @@ export default function Profile() {
 			{/* Инфо секция */}
 			<View className='mx-6 mb-8'>
 				<View className='flex-row items-center justify-between mb-4'>
-					<Text className='text-xs text-gray-500 uppercase tracking-widest font-semibold'>
+					<Text className='text-xs uppercase tracking-widest font-semibold' style={{ color: colors.textSecondary }}>
 						Информация об аккаунте
 					</Text>
 					{!isEditing && (
@@ -131,45 +132,41 @@ export default function Profile() {
 							className='flex-row items-center gap-1'
 						>
 							<MaterialIcons name='edit' size={18} color={Colors.primary} />
-							<Text className='text-xs text-primary uppercase tracking-widest font-semibold'>
+							<Text className='text-xs uppercase tracking-widest font-semibold' style={{ color: Colors.primary }}>
 								Редактировать
 							</Text>
 						</Pressable>
 					)}
 				</View>
 
-				{/* Email поле (не редактируется) */}
+				{/* Email поле */}
 				<View
 					className='rounded-2xl p-6 border-2 mb-4'
-					style={{ borderColor: '#333333' }}
+					style={{ borderColor: colors.border }}
 				>
-					<View className='flex-row items-center '>
+					<View className='flex-row items-center'>
 						<MaterialIcons name='email' size={20} color={Colors.primary} />
-						<Text className='text-xs text-gray-400 ml-3 font-semibold uppercase tracking-wider'>
+						<Text className='text-xs ml-3 font-semibold uppercase tracking-wider' style={{ color: colors.textSecondary }}>
 							Email
 						</Text>
 					</View>
-					<Text className='text-base text-white font-medium leading-6 ml-6 pl-2'>
+					<Text className='text-base font-medium leading-6 ml-6 pl-2' style={{ color: colors.text }}>
 						{user?.email}
 					</Text>
 				</View>
 
-				{/* ID пользователя поле (не редактируется) */}
+				{/* ID поле */}
 				<View
 					className='rounded-2xl p-6 border-2 mb-4'
-					style={{ borderColor: '#333333' }}
+					style={{ borderColor: colors.border }}
 				>
 					<View className='flex-row items-center'>
-						<MaterialIcons
-							name='fingerprint'
-							size={20}
-							color={Colors.primary}
-						/>
-						<Text className='text-xs text-gray-400 ml-3 font-semibold uppercase tracking-wider'>
+						<MaterialIcons name='fingerprint' size={20} color={Colors.primary} />
+						<Text className='text-xs ml-3 font-semibold uppercase tracking-wider' style={{ color: colors.textSecondary }}>
 							ID
 						</Text>
 					</View>
-					<Text className='text-xs text-gray-300 font-mono tracking-wider ml-6 pl-2'>
+					<Text className='text-xs font-mono tracking-wider ml-6 pl-2' style={{ color: colors.text }}>
 						{user?.uid}
 					</Text>
 				</View>
@@ -177,12 +174,12 @@ export default function Profile() {
 				{isEditing && (
 					<>
 						{/* Основная информация */}
-						<View className='mb-6 pb-4 border-b border-gray-700 mt-4'>
-							<Text className='text-xs text-gray-500 uppercase tracking-widest mb-3 font-semibold'>
+						<View style={{ marginBottom: 24, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: colors.border, marginTop: 16 }}>
+							<Text style={{ color: colors.textSecondary, fontSize: 12, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 12, fontWeight: '600' }}>
 								Основная информация
 							</Text>
 
-							<View className='mb-3'>
+							<View style={{ marginBottom: 12 }}>
 								<FormInput<IUserProfile>
 									name='name'
 									placeholder='Имя'
@@ -190,7 +187,7 @@ export default function Profile() {
 								/>
 							</View>
 
-							<View className='mb-3'>
+							<View style={{ marginBottom: 12 }}>
 								<FormInput<IUserProfile>
 									name='phone'
 									placeholder='Телефон'
@@ -206,122 +203,62 @@ export default function Profile() {
 			{/* Данные поставщика для актов отгрузки */}
 			{!isCourier && (
 				<View className='mx-6 mb-8'>
-					<Text className='text-xs text-gray-500 uppercase tracking-widest mb-4 font-semibold'>
+					<Text style={{ color: colors.textSecondary }} className='text-xs uppercase tracking-widest mb-4 font-semibold'>
 						Данные поставщика (для актов отгрузки)
 					</Text>
 
 					{isEditing ? (
 						<View className='gap-3 mb-6'>
-							<FormInput<IUserProfile>
-								name='supplierFullName'
-								placeholder='ФИО или название компании'
-								control={control}
-							/>
-							<FormInput<IUserProfile>
-								name='supplierInn'
-								placeholder='ИНН'
-								keyboardType='numeric'
-								control={control}
-							/>
-							<FormInput<IUserProfile>
-								name='supplierAddress'
-								placeholder='Адрес'
-								control={control}
-							/>
-							<FormInput<IUserProfile>
-								name='supplierBankName'
-								placeholder='Название банка'
-								control={control}
-							/>
-							<FormInput<IUserProfile>
-								name='supplierBik'
-								placeholder='БИК'
-								keyboardType='numeric'
-								control={control}
-							/>
-							<FormInput<IUserProfile>
-								name='supplierAccountNumber'
-								placeholder='Расчетный счет'
-								keyboardType='numeric'
-								control={control}
-							/>
-							<FormInput<IUserProfile>
-								name='supplierCorrespondentAccount'
-								placeholder='Корреспондентский счет'
-								keyboardType='numeric'
-								control={control}
-							/>
+							<FormInput<IUserProfile> name='supplierFullName' placeholder='ФИО или название компании' control={control} />
+							<FormInput<IUserProfile> name='supplierInn' placeholder='ИНН' keyboardType='numeric' control={control} />
+							<FormInput<IUserProfile> name='supplierAddress' placeholder='Адрес' control={control} />
+							<FormInput<IUserProfile> name='supplierBankName' placeholder='Название банка' control={control} />
+							<FormInput<IUserProfile> name='supplierBik' placeholder='БИК' keyboardType='numeric' control={control} />
+							<FormInput<IUserProfile> name='supplierAccountNumber' placeholder='Расчетный счет' keyboardType='numeric' control={control} />
+							<FormInput<IUserProfile> name='supplierCorrespondentAccount' placeholder='Корреспондентский счет' keyboardType='numeric' control={control} />
 						</View>
 					) : (
 						<View className='gap-3'>
 							{watchedFields.supplierFullName && (
-								<View className='rounded-2xl p-4 border border-gray-700'>
-									<Text className='text-xs text-gray-400 font-semibold uppercase tracking-wider mb-1'>
-										Название
-									</Text>
-									<Text className='text-base text-white font-medium'>
-										{watchedFields.supplierFullName}
-									</Text>
+								<View className='rounded-2xl p-4 border' style={{ borderColor: colors.border }}>
+									<Text style={{ color: colors.textSecondary }} className='text-xs font-semibold uppercase tracking-wider mb-1'>Название</Text>
+									<Text style={{ color: colors.text }} className='text-base font-medium'>{watchedFields.supplierFullName}</Text>
 								</View>
 							)}
 							{watchedFields.supplierInn && (
-								<View className='rounded-2xl p-4 border border-gray-700'>
-									<Text className='text-xs text-gray-400 font-semibold uppercase tracking-wider mb-1'>
-										ИНН
-									</Text>
-									<Text className='text-base text-white font-medium'>
-										{watchedFields.supplierInn}
-									</Text>
+								<View className='rounded-2xl p-4 border' style={{ borderColor: colors.border }}>
+									<Text style={{ color: colors.textSecondary }} className='text-xs font-semibold uppercase tracking-wider mb-1'>ИНН</Text>
+									<Text style={{ color: colors.text }} className='text-base font-medium'>{watchedFields.supplierInn}</Text>
 								</View>
 							)}
 							{watchedFields.supplierAddress && (
-								<View className='rounded-2xl p-4 border border-gray-700'>
-									<Text className='text-xs text-gray-400 font-semibold uppercase tracking-wider mb-1'>
-										Адрес
-									</Text>
-									<Text className='text-base text-white font-medium'>
-										{watchedFields.supplierAddress}
-									</Text>
+								<View className='rounded-2xl p-4 border' style={{ borderColor: colors.border }}>
+									<Text style={{ color: colors.textSecondary }} className='text-xs font-semibold uppercase tracking-wider mb-1'>Адрес</Text>
+									<Text style={{ color: colors.text }} className='text-base font-medium'>{watchedFields.supplierAddress}</Text>
 								</View>
 							)}
 							{watchedFields.supplierBankName && (
-								<View className='rounded-2xl p-4 border border-gray-700'>
-									<Text className='text-xs text-gray-400 font-semibold uppercase tracking-wider mb-1'>
-										Банк
-									</Text>
-									<Text className='text-base text-white font-medium'>
-										{watchedFields.supplierBankName}
-									</Text>
+								<View className='rounded-2xl p-4 border' style={{ borderColor: colors.border }}>
+									<Text style={{ color: colors.textSecondary }} className='text-xs font-semibold uppercase tracking-wider mb-1'>Банк</Text>
+									<Text style={{ color: colors.text }} className='text-base font-medium'>{watchedFields.supplierBankName}</Text>
 								</View>
 							)}
 							{watchedFields.supplierBik && (
-								<View className='rounded-2xl p-4 border border-gray-700'>
-									<Text className='text-xs text-gray-400 font-semibold uppercase tracking-wider mb-1'>
-										БИК
-									</Text>
-									<Text className='text-base text-white font-medium'>
-										{watchedFields.supplierBik}
-									</Text>
+								<View className='rounded-2xl p-4 border' style={{ borderColor: colors.border }}>
+									<Text style={{ color: colors.textSecondary }} className='text-xs font-semibold uppercase tracking-wider mb-1'>БИК</Text>
+									<Text style={{ color: colors.text }} className='text-base font-medium'>{watchedFields.supplierBik}</Text>
 								</View>
 							)}
 							{watchedFields.supplierAccountNumber && (
-								<View className='rounded-2xl p-4 border border-gray-700'>
-									<Text className='text-xs text-gray-400 font-semibold uppercase tracking-wider mb-1'>
-										Расчетный счет
-									</Text>
-									<Text className='text-base text-white font-medium'>
-										{watchedFields.supplierAccountNumber}
-									</Text>
+								<View className='rounded-2xl p-4 border' style={{ borderColor: colors.border }}>
+									<Text style={{ color: colors.textSecondary }} className='text-xs font-semibold uppercase tracking-wider mb-1'>Расчетный счет</Text>
+									<Text style={{ color: colors.text }} className='text-base font-medium'>{watchedFields.supplierAccountNumber}</Text>
 								</View>
 							)}
 							{watchedFields.supplierCorrespondentAccount && (
-								<View className='rounded-2xl p-4 border border-gray-700'>
-									<Text className='text-xs text-gray-400 font-semibold uppercase tracking-wider mb-1'>
-										Корреспондентский счет
-									</Text>
-									<Text className='text-base text-white font-medium'>
-										{watchedFields.supplierCorrespondentAccount}
-									</Text>
+								<View className='rounded-2xl p-4 border' style={{ borderColor: colors.border }}>
+									<Text style={{ color: colors.textSecondary }} className='text-xs font-semibold uppercase tracking-wider mb-1'>Корреспондентский счет</Text>
+									<Text style={{ color: colors.text }} className='text-base font-medium'>{watchedFields.supplierCorrespondentAccount}</Text>
 								</View>
 							)}
 						</View>
@@ -358,9 +295,31 @@ export default function Profile() {
 			{/* Действия */}
 			{!isEditing && (
 				<View className='mx-6'>
-					<Text className='text-xs text-gray-500 uppercase tracking-widest mb-4 font-semibold'>
+					<Text className='text-xs uppercase tracking-widest mb-4 font-semibold' style={{ color: colors.textSecondary }}>
 						Действия
 					</Text>
+					{/* Переключатель темы */}
+					<View
+						className='rounded-2xl p-4 border mb-4 flex-row items-center justify-between'
+						style={{ borderColor: colors.border, backgroundColor: colors.surface }}
+					>
+						<View className='flex-row items-center gap-3'>
+							<MaterialIcons
+								name={theme === 'light' ? 'wb-sunny' : 'nightlight-round'}
+								size={22}
+								color={Colors.primary}
+							/>
+							<Text className='font-semibold' style={{ color: colors.text }}>
+								{theme === 'light' ? 'Светлая тема' : 'Тёмная тема'}
+							</Text>
+						</View>
+						<Switch
+							value={theme === 'dark'}
+							onValueChange={toggleTheme}
+							trackColor={{ false: colors.border, true: Colors.primary + '80' }}
+							thumbColor={theme === 'dark' ? Colors.primary : colors.textSecondary}
+						/>
+					</View>
 					<SignOut />
 				</View>
 			)}

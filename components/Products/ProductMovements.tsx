@@ -1,4 +1,5 @@
 import { MovementType, useInventoryMovements } from '@/hooks/useInventoryMovements'
+import { useTheme } from '@/providers/theme/ThemeProvider'
 import { Feather } from '@expo/vector-icons'
 import { FC, useMemo } from 'react'
 import { ScrollView, Text, View } from 'react-native'
@@ -10,11 +11,11 @@ type Props = {
 
 const getMovementTypeColor = (type: MovementType) => {
 	switch (type) {
-		case 'sale': return '#EF4444' // красный
-		case 'delivery_out': return '#F59E0B' // оранжевый
-		case 'delivery_in': return '#10B981' // зелёный
-		case 'return': return '#3B82F6' // синий
-		case 'adjustment': return '#8B5CF6' // фиолетовый
+		case 'sale': return '#EF4444'
+		case 'delivery_out': return '#F59E0B'
+		case 'delivery_in': return '#10B981'
+		case 'return': return '#3B82F6'
+		case 'adjustment': return '#8B5CF6'
 		default: return '#9CA3AF'
 	}
 }
@@ -43,77 +44,76 @@ const getMovementIcon = (type: MovementType) => {
 
 export const ProductMovements: FC<Props> = ({ productId, productName }) => {
 	const { movements, isLoading } = useInventoryMovements()
+	const { colors } = useTheme()
 
 	const productMovements = useMemo(() => {
-		return movements
-			.filter(movement => movement.productId === productId)
-			.slice(0, 10) // показываем последние 10 движений
+		return movements.filter(m => m.productId === productId).slice(0, 10)
 	}, [movements, productId])
 
 	if (isLoading) {
 		return (
-			<View className='bg-gray-default rounded-lg p-4'>
-				<Text className='text-gray-400 text-center'>Загрузка движений...</Text>
+			<View style={{ backgroundColor: colors.surface, borderRadius: 8, padding: 16 }}>
+				<Text style={{ color: colors.textSecondary, textAlign: 'center' }}>Загрузка движений...</Text>
 			</View>
 		)
 	}
 
 	if (productMovements.length === 0) {
 		return (
-			<View className='bg-gray-default rounded-lg p-4'>
-				<View className='flex-row items-center mb-2'>
-					<Feather name='activity' size={18} color='#BF3335' />
-					<Text className='text-white font-semibold ml-2'>Движения товара</Text>
+			<View style={{ backgroundColor: colors.surface, borderRadius: 8, padding: 16 }}>
+				<View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+					<Feather name='activity' size={18} color={colors.primary} />
+					<Text style={{ color: colors.text, fontWeight: '600', marginLeft: 8 }}>Движения товара</Text>
 				</View>
-				<Text className='text-gray-400 text-sm'>Нет движений по данному товару</Text>
+				<Text style={{ color: colors.textSecondary, fontSize: 14 }}>Нет движений по данному товару</Text>
 			</View>
 		)
 	}
 
 	return (
-		<View className='bg-gray-default rounded-lg p-4'>
-			<View className='flex-row items-center mb-3'>
-				<Feather name='activity' size={18} color='#BF3335' />
-				<Text className='text-white font-semibold ml-2'>
+		<View style={{ backgroundColor: colors.surface, borderRadius: 8, padding: 16 }}>
+			<View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+				<Feather name='activity' size={18} color={colors.primary} />
+				<Text style={{ color: colors.text, fontWeight: '600', marginLeft: 8 }}>
 					Движения товара ({productMovements.length})
 				</Text>
 			</View>
 
-			<ScrollView className='max-h-150' showsVerticalScrollIndicator={false}>
+			<ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 400 }}>
 				{productMovements.map((movement, idx) => (
-					<View 
-						key={movement.id} 
-						className={`flex-row items-center py-3 ${idx < productMovements.length - 1 ? 'border-b border-gray-600' : ''}`}
+					<View
+						key={movement.id}
+						style={{
+							flexDirection: 'row',
+							alignItems: 'center',
+							paddingVertical: 12,
+							borderBottomWidth: idx < productMovements.length - 1 ? 1 : 0,
+							borderBottomColor: colors.border
+						}}
 					>
-						<View 
-							className='w-8 h-8 rounded-full items-center justify-center'
-						>
-							<Feather 
-								name={getMovementIcon(movement.movementType) as any} 
-								size={14} 
-								color={getMovementTypeColor(movement.movementType)} 
+						<View style={{ width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: getMovementTypeColor(movement.movementType) + '20' }}>
+							<Feather
+								name={getMovementIcon(movement.movementType) as any}
+								size={14}
+								color={getMovementTypeColor(movement.movementType)}
 							/>
 						</View>
 
-						<View className='flex-1'>
-							<View className='flex-row items-center justify-between mb-1'>
-								<Text className='text-white font-medium text-sm'>
+						<View style={{ flex: 1, marginLeft: 12 }}>
+							<View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+								<Text style={{ color: colors.text, fontWeight: '500', fontSize: 14 }}>
 									{getMovementTypeLabel(movement.movementType)}
 								</Text>
-								<Text 
-									className={`text-sm font-bold ${movement.quantity > 0 ? 'text-green-400' : 'text-red-400'}`}
-								>
+								<Text style={{ fontSize: 14, fontWeight: 'bold', color: movement.quantity > 0 ? '#10B981' : '#EF4444' }}>
 									{movement.quantity > 0 ? '+' : ''}{movement.quantity}
 								</Text>
 							</View>
-							
 							{movement.reason && (
-								<Text className='text-gray-500 text-xs' numberOfLines={1}>
+								<Text style={{ color: colors.textSecondary, fontSize: 12 }} numberOfLines={1}>
 									{movement.reason}
 								</Text>
 							)}
-							
-							<Text className='text-gray-500 text-xs mt-1'>
+							<Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 2 }}>
 								{new Date(movement.timestamp).toLocaleString('ru-RU')}
 							</Text>
 						</View>
@@ -122,7 +122,7 @@ export const ProductMovements: FC<Props> = ({ productId, productName }) => {
 			</ScrollView>
 
 			{movements.filter(m => m.productId === productId).length > 10 && (
-				<Text className='text-gray-500 text-xs text-center mt-2'>
+				<Text style={{ color: colors.textSecondary, fontSize: 12, textAlign: 'center', marginTop: 8 }}>
 					Показаны последние 10 движений
 				</Text>
 			)}

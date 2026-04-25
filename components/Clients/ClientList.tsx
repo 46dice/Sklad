@@ -1,3 +1,4 @@
+import { useTheme } from '@/providers/theme/ThemeProvider'
 import { INewClientForm } from '@/shared/types/clients.types'
 import { Feather } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
@@ -10,21 +11,22 @@ interface ClientListProps {
 
 export default function ClientList({ clients, isLoading }: ClientListProps) {
 	const router = useRouter()
+	const { colors } = useTheme()
 
 	if (isLoading) {
 		return (
-			<View className='flex-1 items-center justify-center'>
-				<Text className='text-white'>Загрузка клиентов...</Text>
+			<View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+				<Text style={{ color: colors.text }}>Загрузка клиентов...</Text>
 			</View>
 		)
 	}
 
 	if (clients.length === 0) {
 		return (
-			<View className='flex-1 items-center justify-center'>
-				<Feather name='inbox' size={48} color='#666' />
-				<Text className='text-gray-500 mt-4'>Нет клиентов</Text>
-				<Text className='text-gray-500 text-sm'>Добавьте первого клиента</Text>
+			<View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+				<Feather name='inbox' size={48} color={colors.textSecondary} />
+				<Text style={{ color: colors.textSecondary, marginTop: 16 }}>Нет клиентов</Text>
+				<Text style={{ color: colors.textSecondary, fontSize: 14 }}>Добавьте первого клиента</Text>
 			</View>
 		)
 	}
@@ -34,24 +36,25 @@ export default function ClientList({ clients, isLoading }: ClientListProps) {
 			data={clients}
 			keyExtractor={(item, index) => item.id ? item.id.toString() : index.toString()}
 			renderItem={({ item }) => (
-				<Pressable 
+				<Pressable
 					onPress={() => router.push(`/app/agent/${item.id}`)}
-					className='border-b border-gray-default px-4 py-4 flex-row items-center justify-between'>
-					<View className='flex-1'>
-						<Text className='text-white font-semibold mb-1'>{item.name}</Text>
-						<View className='gap-1'>
+					style={{ borderBottomWidth: 1, borderBottomColor: colors.border, paddingHorizontal: 16, paddingVertical: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+				>
+					<View style={{ flex: 1 }}>
+						<Text style={{ color: colors.text, fontWeight: '600', marginBottom: 4 }}>{item.name}</Text>
+						<View style={{ gap: 4 }}>
 							{item.phone && (
-								<Text className='text-gray-500 text-sm'>Номер телефона: {item.phone}</Text>
+								<Text style={{ color: colors.textSecondary, fontSize: 14 }}>Номер телефона: {item.phone}</Text>
 							)}
 							{item.inn && (
-								<Text className='text-gray-500 text-sm'>ИНН:  {item.inn}</Text>
+								<Text style={{ color: colors.textSecondary, fontSize: 14 }}>ИНН: {item.inn}</Text>
 							)}
 							{item.email && (
-								<Text className='text-gray-500 text-sm'>{item.email}</Text>
+								<Text style={{ color: colors.textSecondary, fontSize: 14 }}>{item.email}</Text>
 							)}
 						</View>
 					</View>
-					<Feather name='chevron-right' size={20} color='#666' />
+					<Feather name='chevron-right' size={20} color={colors.textSecondary} />
 				</Pressable>
 			)}
 			scrollEnabled={true}

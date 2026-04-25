@@ -1,5 +1,5 @@
 import { useAuth } from '@/hooks/useAuth'
-import { Colors } from '@/shared/constants/Colors'
+import { useTheme } from '@/providers/theme/ThemeProvider'
 import { TypeFeatherIconNames } from '@/shared/types/icon.types'
 import { Feather } from '@expo/vector-icons'
 import { Redirect, Tabs } from 'expo-router'
@@ -9,12 +9,12 @@ export const unstable_settings = {
 	initialRouteName: 'Monitoring',
 }
 
-const getLabelOptions = (iconName: TypeFeatherIconNames) => {
+const getLabelOptions = (iconName: TypeFeatherIconNames, primaryColor: string, inactiveColor: string) => {
 	return {
 		tabBarLabel: ({ focused, color, children }: any) => (
 			<Text
 				style={{
-					color: focused ? Colors.primary : color,
+					color: focused ? primaryColor : inactiveColor,
 					fontSize: 12
 				}}
 			>
@@ -25,7 +25,7 @@ const getLabelOptions = (iconName: TypeFeatherIconNames) => {
 			<Feather
 				size={20}
 				name={iconName}
-				color={focused ? Colors.primary : color}
+				color={focused ? primaryColor : inactiveColor}
 			/>
 		)
 	}
@@ -33,6 +33,7 @@ const getLabelOptions = (iconName: TypeFeatherIconNames) => {
 
 export default function AppLayout() {
 	const { user, userProfile, isLoading } = useAuth()
+	const { colors } = useTheme()
 
 	if (!user) {
 		return <Redirect href='/auth' /> 
@@ -41,8 +42,8 @@ export default function AppLayout() {
 	// Показываем загрузку пока профиль не загружен
 	if (isLoading || !userProfile) {
 		return (
-			<View className='flex-1 items-center justify-center' style={{ backgroundColor: Colors.black }}>
-				<ActivityIndicator size='large' color={Colors.primary} />
+			<View className='flex-1 items-center justify-center' style={{ backgroundColor: colors.background }}>
+				<ActivityIndicator size='large' color={colors.primary} />
 			</View>
 		)
 	}
@@ -58,10 +59,11 @@ export default function AppLayout() {
 				headerShown: false,
 				headerTitle: '',
 				tabBarStyle: {
-					backgroundColor: Colors.black
+					backgroundColor: colors.surface,
+					borderTopColor: colors.border
 				},
 				sceneStyle: {
-					backgroundColor: Colors.black
+					backgroundColor: colors.background
 				}
 			}}
 		>
@@ -69,10 +71,7 @@ export default function AppLayout() {
 				name='monitoring'
 				options={{
 					title: 'Мониторинг',
-					tabBarLabelStyle: {
-						color: Colors.primary
-					},
-					...getLabelOptions('monitor'),
+					...getLabelOptions('monitor', colors.primary, colors.textSecondary),
 					href: isCourier ? null : undefined
 				}}
 			/>
@@ -80,7 +79,7 @@ export default function AppLayout() {
 				name='documents'
 				options={{
 					title: 'Документы',
-					...getLabelOptions('inbox'),
+					...getLabelOptions('inbox', colors.primary, colors.textSecondary),
 					href: isCourier ? null : undefined
 				}}
 			/>
@@ -88,7 +87,7 @@ export default function AppLayout() {
 				name='products'
 				options={{
 					title: 'Услуги',
-					...getLabelOptions('shopping-cart'),
+					...getLabelOptions('shopping-cart', colors.primary, colors.textSecondary),
 					href: isCourier ? null : undefined
 				}}
 			/>
@@ -96,10 +95,10 @@ export default function AppLayout() {
 				name='income'
 				options={{
 					title: 'Доход',
-					...getLabelOptions('dollar-sign'),
+					...getLabelOptions('dollar-sign', colors.primary, colors.textSecondary),
 					href: !isCourier ? null : undefined,
 					sceneStyle: {
-						backgroundColor: Colors.black
+						backgroundColor: colors.background
 					}
 				}}
 			/>
@@ -107,14 +106,14 @@ export default function AppLayout() {
 				name='deliveries'
 				options={{
 					title: 'Доставки',
-					...getLabelOptions('truck')
+					...getLabelOptions('truck', colors.primary, colors.textSecondary)
 				}}
 			/>
 			<Tabs.Screen
 				name='agents'
 				options={{
 					title: 'Клиенты',
-					...getLabelOptions('user'),
+					...getLabelOptions('user', colors.primary, colors.textSecondary),
 					href: isCourier ? null : undefined
 				}}
 			/>

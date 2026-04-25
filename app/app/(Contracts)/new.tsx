@@ -1,7 +1,8 @@
-import { useClients } from '@/components/Clients/hooks/useClients'
 import { ShipmentForm } from '@/components/Contracts/ShipmentForm'
 import { useProducts } from '@/components/Products/hooks/useProducts'
+import { useClients } from '@/hooks/useClients'
 import { useShipments } from '@/hooks/useShipments'
+import { useTheme } from '@/providers/theme/ThemeProvider'
 import { INewShipmentForm } from '@/shared/types/shipment.types'
 import { useRouter } from 'expo-router'
 import { FC, useState } from 'react'
@@ -9,6 +10,7 @@ import { ActivityIndicator, Text, View } from 'react-native'
 
 const NewShipmentModal: FC = () => {
 	const router = useRouter()
+	const { colors } = useTheme()
 	const { clients, isLoading: clientsLoading } = useClients()
 	const { products, isLoading: productsLoading } = useProducts()
 	const { saveShipment } = useShipments()
@@ -45,9 +47,9 @@ const NewShipmentModal: FC = () => {
 
 	if (clientsLoading || productsLoading || isProcessing) {
 		return (
-			<View className='flex-1 bg-black items-center justify-center'>
-				<ActivityIndicator size='large' color='#3B82F6' />
-				<Text className='text-white mt-4'>
+			<View style={{ flex: 1, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' }}>
+				<ActivityIndicator size='large' color={colors.primary} />
+				<Text style={{ color: colors.text, marginTop: 16 }}>
 					{isProcessing ? 'Сохранение акта...' : 'Загрузка данных...'}
 				</Text>
 			</View>
@@ -55,7 +57,7 @@ const NewShipmentModal: FC = () => {
 	}
 
 	return (
-		<View className='flex-1 bg-black'>
+		<View style={{ flex: 1, backgroundColor: colors.background }}>
 			<ShipmentForm
 				onSubmit={handleCreateShipment}
 				onBack={() => router.back()}

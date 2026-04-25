@@ -1,4 +1,5 @@
 import { useAuth } from '@/hooks/useAuth'
+import { useTheme } from '@/providers/theme/ThemeProvider'
 import { validEmail } from '@/shared/reges'
 import { IAuthFormData } from '@/shared/types/auth.types'
 import { UserRole } from '@/shared/types/user.types'
@@ -19,6 +20,7 @@ enum TypeAuth {
 export default function Auth() {
 	const [typeAuth, setTypeAuth] = useState<TypeAuth>(TypeAuth.Register)
 	const [selectedRole, setSelectedRole] = useState<UserRole>('manager')
+	const { colors } = useTheme()
 
 	const { user, handleLogin, handleRegister, isLoading } = useAuth()
 
@@ -54,9 +56,10 @@ export default function Auth() {
 
 	return (
 		<DismissKeyboard>
-			<View className='items-center justify-center h-full bg-black'>
-				<View className='items-center w-9/12'>
-					<Text className='color-white text-5xl mb-3 font-bold'>{text}</Text>
+			<View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background }}>
+				<View style={{ alignItems: 'center', width: '75%' }}>
+					<Text style={{ color: colors.text, fontSize: 48, marginBottom: 12, fontWeight: 'bold' }}>{text}</Text>
+					<View style={{ width: '100%', gap: 8 }}>
 					<FormInput<IAuthFormData>
 						name='email'
 						keyboardType='email-address'
@@ -84,63 +87,62 @@ export default function Auth() {
 							}
 						}}
 					/>
+				</View>
 
 					{/* Выбор роли при регистрации */}
 					{isRegister && (
-						<View className='w-full mb-4'>
-							<Text className='text-gray-300 text-sm font-medium mb-2'>
+						<View style={{ width: '100%', marginBottom: 16 }}>
+							<Text style={{ color: colors.textSecondary, fontSize: 14, fontWeight: '500', marginBottom: 8 }}>
 								Выберите роль
 							</Text>
-							<View className='flex-row gap-3'>
+							<View style={{ flexDirection: 'row', gap: 12 }}>
 								<TouchableOpacity
 									onPress={() => setSelectedRole('manager')}
-									className={`flex-1 p-4 rounded-lg border-2 ${
-										selectedRole === 'manager'
-											? 'border-primary bg-primary/20'
-											: 'border-gray-600 bg-gray-default'
-									}`}
+									style={{
+										flex: 1,
+										padding: 16,
+										borderRadius: 8,
+										borderWidth: 2,
+										borderColor: selectedRole === 'manager' ? colors.primary : colors.border,
+										backgroundColor: selectedRole === 'manager' ? colors.primary + '20' : colors.surface
+									}}
 								>
-									<View className='items-center'>
+									<View style={{ alignItems: 'center' }}>
 										<Feather
 											name='briefcase'
 											size={32}
-											color={selectedRole === 'manager' ? '#BF3335' : '#9CA3AF'}
+											color={selectedRole === 'manager' ? colors.primary : colors.textSecondary}
 										/>
-										<Text
-											className={`mt-2 font-semibold ${
-												selectedRole === 'manager' ? 'text-primary' : 'text-gray-400'
-											}`}
-										>
+										<Text style={{ marginTop: 8, fontWeight: '600', color: selectedRole === 'manager' ? colors.primary : colors.textSecondary }}>
 											Менеджер
 										</Text>
-										<Text className='text-gray-500 text-xs text-center mt-1'>
-											Управление товарами и продажами
+										<Text style={{ color: colors.textSecondary, fontSize: 12, textAlign: 'center', marginTop: 4 }}>
+											Управление услугами и продажами
 										</Text>
 									</View>
 								</TouchableOpacity>
 
 								<TouchableOpacity
 									onPress={() => setSelectedRole('courier')}
-									className={`flex-1 p-4 rounded-lg border-2 ${
-										selectedRole === 'courier'
-											? 'border-primary bg-primary/20'
-											: 'border-gray-600 bg-gray-default'
-									}`}
+									style={{
+										flex: 1,
+										padding: 16,
+										borderRadius: 8,
+										borderWidth: 2,
+										borderColor: selectedRole === 'courier' ? colors.primary : colors.border,
+										backgroundColor: selectedRole === 'courier' ? colors.primary + '20' : colors.surface
+									}}
 								>
-									<View className='items-center'>
+									<View style={{ alignItems: 'center' }}>
 										<Feather
 											name='truck'
 											size={32}
-											color={selectedRole === 'courier' ? '#BF3335' : '#9CA3AF'}
+											color={selectedRole === 'courier' ? colors.primary : colors.textSecondary}
 										/>
-										<Text
-											className={`mt-2 font-semibold ${
-												selectedRole === 'courier' ? 'text-primary' : 'text-gray-400'
-											}`}
-										>
+										<Text style={{ marginTop: 8, fontWeight: '600', color: selectedRole === 'courier' ? colors.primary : colors.textSecondary }}>
 											Курьер
 										</Text>
-										<Text className='text-gray-500 text-xs text-center mt-1'>
+										<Text style={{ color: colors.textSecondary, fontSize: 12, textAlign: 'center', marginTop: 4 }}>
 											Выполнение доставок
 										</Text>
 									</View>
@@ -151,11 +153,9 @@ export default function Auth() {
 
 					<Text
 						onPress={onToggleTypeAuth}
-						className='text-gray-500 ml-auto text-sm mb-6'
+						style={{ color: colors.textSecondary, marginLeft: 'auto', fontSize: 14, marginBottom: 24 }}
 					>
-						{isRegister
-							? 'Есть аккаунт? Войти'
-							: 'Нет аккаунта? Зарегистрироваться'}
+						{isRegister ? 'Есть аккаунт? Войти' : 'Нет аккаунта? Зарегистрироваться'}
 					</Text>
 
 					<Button

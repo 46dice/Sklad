@@ -1,4 +1,5 @@
 import { useAuth } from '@/hooks/useAuth'
+import { useTheme } from '@/providers/theme/ThemeProvider'
 import { validEmail } from '@/shared/reges'
 import { INewClientForm } from '@/shared/types/clients.types'
 import { Button } from '@/shared/ui/Button'
@@ -6,7 +7,7 @@ import { FormInput } from '@/shared/ui/FormInput'
 import { isEqual } from 'lodash'
 import { useEffect } from 'react'
 import { Controller, useForm } from 'react-hook-form'
-import { Switch, Text, View } from 'react-native'
+import { ScrollView, Switch, Text, View } from 'react-native'
 import useClientStore, { initialFormState } from '../client.model'
 import { useClients } from '../hooks/useClients'
 import { useNewClient } from '../hooks/useNewClient'
@@ -14,7 +15,7 @@ import { useNewClient } from '../hooks/useNewClient'
 export default function AddNewClientForm() {
 	const { newClientFormState, updateFormState, setSubmitFunction, resetForm } =
 		useClientStore()
-
+	const { colors } = useTheme()
 	const { user } = useAuth()
 
 	const { control, watch, reset, setValue } = useForm<INewClientForm>({
@@ -84,16 +85,14 @@ export default function AddNewClientForm() {
 	}
 
 	const onSubmitSearchInn = async ({ inn }: { inn: string }) => {
-		if (!inn.length) {
-			return
-		}
+		if (!inn.length) return
 		await fetchClientINN(inn)
 	}
 
 	return (
-		<>
+		<ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
 			<View className='px-4'>
-				<Text className='text-white text-center mt-4 mb-1'>
+				<Text style={{ color: colors.text }} className='text-center mt-4 mb-1'>
 					Можно заполнить форму автоматически, указав ИНН. Просто введите ИНН
 					ниже и нажмите &quot;Заполнить&quot;
 				</Text>
@@ -132,9 +131,7 @@ export default function AddNewClientForm() {
 					name='name'
 					control={control}
 					placeholder='Наименование (Отобразится во вкладке "Клиенты")'
-					rules={{
-						required: 'Наименование обязательно!'
-					}}
+					rules={{ required: 'Наименование обязательно!' }}
 					onChangeText={text => onFormChange({ name: text })}
 				/>
 				<FormInput<INewClientForm>
@@ -150,10 +147,7 @@ export default function AddNewClientForm() {
 					placeholder='Email'
 					keyboardType='email-address'
 					rules={{
-						pattern: {
-							value: validEmail,
-							message: 'Некорректный email'
-						}
+						pattern: { value: validEmail, message: 'Некорректный email' }
 					}}
 					onChangeText={text => onFormChange({ email: text })}
 				/>
@@ -166,7 +160,7 @@ export default function AddNewClientForm() {
 			</View>
 
 			<View className='gap-1 mb-2'>
-				<Text className='uppercase text-sm text-white'>Расчетный счет</Text>
+				<Text style={{ color: colors.text }} className='uppercase text-sm'>Расчетный счет</Text>
 				<FormInput<INewClientForm>
 					name='bankAccountNumber'
 					control={control}
@@ -177,9 +171,9 @@ export default function AddNewClientForm() {
 			</View>
 
 			<View className='flex-row items-center justify-between mb-2'>
-				<Text className='uppercase text-sm text-white'>Реквизиты</Text>
+				<Text style={{ color: colors.text }} className='uppercase text-sm'>Реквизиты</Text>
 				<View className='items-center gap-1.5 flex-row'>
-					<Text className='text-gray-500 text-sm'>Физическое лицо</Text>
+					<Text style={{ color: colors.textSecondary }} className='text-sm'>Физическое лицо</Text>
 					<View>
 						<Controller
 							control={control}
@@ -191,6 +185,8 @@ export default function AddNewClientForm() {
 										onChange(newValue)
 										onFormChange({ isPhysicalPerson: newValue })
 									}}
+									trackColor={{ false: colors.border, true: colors.primary + '80' }}
+									thumbColor={value ? colors.primary : colors.textSecondary}
 								/>
 							)}
 						/>
@@ -235,6 +231,6 @@ export default function AddNewClientForm() {
 					/>
 				</View>
 			) : null}
-		</>
+		</ScrollView>
 	)
 }

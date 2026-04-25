@@ -1,20 +1,22 @@
 import { SplashScreenController } from '@/components/Splash'
-import { useAuth } from '@/hooks/useAuth'
 import { AuthProvider } from '@/providers/auth/AuthProvider'
-import Toast from 'react-native-toast-message'
+import { ThemeProvider } from '@/providers/theme/ThemeProvider'
 import { Slot } from 'expo-router'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
+import Toast from 'react-native-toast-message'
 import '../global.css'
 
 export default function Root() {
 	return (
-		<AuthProvider>
-			<Toast position='top' />
-			<SafeAreaProvider>
-				<SplashScreenController />
-				<RootNavigator />
-			</SafeAreaProvider>
-		</AuthProvider>
+		<ThemeProvider>
+			<AuthProvider>
+				<Toast position='top' />
+				<SafeAreaProvider>
+					<SplashScreenController />
+					<RootNavigator />
+				</SafeAreaProvider>
+			</AuthProvider>
+		</ThemeProvider>
 	)
 }
 

@@ -2,10 +2,11 @@ import AddNewClient from '@/components/Clients/AddNewClient/AddNewClient'
 import ClientList from '@/components/Clients/ClientList'
 import { GoToProfile } from '@/components/screens/profile/GoToProfile'
 import { useClients } from '@/hooks/useClients'
+import { useTheme } from '@/providers/theme/ThemeProvider'
 import { Input } from '@/shared/ui/Input'
 import { useFocusEffect } from '@react-navigation/native'
 import { FC, useCallback } from 'react'
-import { View } from 'react-native'
+import { Text, View } from 'react-native'
 
 type Props = {}
 
@@ -17,6 +18,7 @@ const Agents: FC<Props> = () => {
 		searchQuery,
 		refreshClients
 	} = useClients()
+	const { colors } = useTheme()
 
 	useFocusEffect(
 		useCallback(() => {
@@ -25,21 +27,23 @@ const Agents: FC<Props> = () => {
 	)
 
 	return (
-		<View className='flex-1'>
-			<View className='ml-auto flex-row gap-4 p-4'>
-				<AddNewClient />
-				<GoToProfile />
+		<View style={{ flex: 1, backgroundColor: colors.background }}>
+			<View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16 }}>
+				<Text style={{ color: colors.text, fontSize: 24, fontWeight: 'bold' }}>Клиенты</Text>
+				<View style={{ flexDirection: 'row', gap: 8 }}>
+					<AddNewClient />
+					<GoToProfile />
+				</View>
 			</View>
-			<View className='px-4 mb-4'>
+			<View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
 				<Input
 					searchIcon
 					placeholder='Поиск по клиентам'
-					className='text-white'
 					value={searchQuery}
 					onChangeText={searchClients}
 				/>
 			</View>
-			<View className='flex-1'>
+			<View style={{ flex: 1 }}>
 				<ClientList clients={filteredClients} isLoading={isLoading} />
 			</View>
 		</View>

@@ -1,21 +1,17 @@
+import { useTheme } from '@/providers/theme/ThemeProvider'
 import { Feather } from '@expo/vector-icons'
 import { router } from 'expo-router'
-import { Pressable, View } from 'react-native'
+import { TouchableOpacity } from 'react-native'
 
 export function GoToProfile() {
-	const onGoToProfile = () => {
-		router.navigate('/app/profile/profile')
-	}
+	const { colors } = useTheme()
 
 	return (
-		<Pressable>
-			<Feather
-				name='settings'
-				size={24}
-				color='white'
-				onPress={onGoToProfile}
-				className='p-4'
-			/>
-		</Pressable>
+		<TouchableOpacity
+			onPress={() => router.navigate('/app/profile/profile')}
+			style={{ backgroundColor: colors.primary, width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' }}
+		>
+			<Feather name='settings' size={20} color='white' />
+		</TouchableOpacity>
 	)
 }

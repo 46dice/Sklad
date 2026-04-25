@@ -2,7 +2,7 @@ import { StatusBar } from 'expo-status-bar'
 
 import useClientStore from '@/components/Clients/client.model'
 import useProductStore from '@/components/Products/product.model'
-import { Colors } from '@/shared/constants/Colors'
+import { useTheme } from '@/providers/theme/ThemeProvider'
 import { Stack, useRouter } from 'expo-router'
 import { Platform, Text } from 'react-native'
 import {
@@ -19,15 +19,16 @@ export default function AppLayout() {
 		newProductFormState,
 		editingProductId
 	} = useProductStore()
+	const { colors, theme } = useTheme()
 
 	return (
 		<SafeAreaProvider>
-			<StatusBar style='light' />
+			<StatusBar style={theme === 'light' ? 'dark' : 'light'} />
 			<Stack
 				screenOptions={{
 					headerShown: false,
 					contentStyle: {
-						backgroundColor: Colors.black,
+						backgroundColor: colors.background,
 						paddingTop: top
 					}
 				}}
@@ -42,13 +43,13 @@ export default function AppLayout() {
 						presentation: 'modal',
 
 						headerStyle: {
-							backgroundColor: Colors.black
+							backgroundColor: colors.surface
 						},
 						headerTitleStyle: {
-							color: Colors.white
+							color: colors.text
 						},
 						contentStyle: {
-							backgroundColor: Colors.black,
+							backgroundColor: colors.background,
 							paddingTop: 0
 						}
 					}}
@@ -60,24 +61,24 @@ export default function AppLayout() {
 						presentation: 'modal',
 						headerShown: true,
 						headerStyle: {
-							backgroundColor: Colors.black
+							backgroundColor: colors.surface
 						},
 						headerTitleStyle: {
-							color: Colors.white
+							color: colors.text
 						},
 						contentStyle: {
-							backgroundColor: Colors.black,
+							backgroundColor: colors.background,
 							paddingTop: 0
 						},
 						headerRight: () => (
 							<Text
 								style={{
 									color: Platform.select({
-										ios: '#007AFF', // Системный синий iOS
-										android: '#2196F3' // Material Design синий
+										ios: '#007AFF',
+										android: '#2196F3'
 									}),
-									fontSize: 17, // Стандартный размер для iOS
-									fontWeight: '600' // Semibold для iOS
+									fontSize: 17,
+									fontWeight: '600'
 								}}
 								onPress={() => {
 									submitForm(newClientFormState)
@@ -98,13 +99,13 @@ export default function AppLayout() {
 						presentation: 'modal',
 						headerShown: true,
 						headerStyle: {
-							backgroundColor: Colors.black
+							backgroundColor: colors.surface
 						},
 						headerTitleStyle: {
-							color: Colors.white
+							color: colors.text
 						},
 						contentStyle: {
-							backgroundColor: Colors.black,
+							backgroundColor: colors.background,
 							paddingTop: 0
 						},
 						headerRight: () => (
@@ -134,13 +135,13 @@ export default function AppLayout() {
 						presentation: 'modal',
 						headerShown: true,
 						headerStyle: {
-							backgroundColor: Colors.black
+							backgroundColor: colors.surface
 						},
 						headerTitleStyle: {
-							color: Colors.white
+							color: colors.text
 						},
 						contentStyle: {
-							backgroundColor: Colors.black,
+							backgroundColor: colors.background,
 							paddingTop: 0
 						},
 						headerRight: () => (

@@ -1,3 +1,4 @@
+import { useTheme } from '@/providers/theme/ThemeProvider'
 import { Feather } from '@expo/vector-icons'
 import cn from 'clsx'
 import { Text, TextInput, TextInputProps, View } from 'react-native'
@@ -17,37 +18,39 @@ export const Input = ({
 	boxClassname,
 	...rest
 }: Props) => {
+	const { colors } = useTheme()
+
 	return (
 		<>
 			<View
-				className={cn(
-					'bg-[#232323] w-full border rounded-lg pb-3 pt-2.5 px-4',
-					secondary
-						? 'border-secondary'
-						: errorText
-							? 'border-red'
-							: 'border-transparent',
-					boxClassname
-				)}
+				style={{
+					backgroundColor: colors.surface,
+					borderWidth: 1,
+					borderColor: secondary ? Colors.secondary : errorText ? Colors.primary : colors.border,
+					borderRadius: 8,
+					paddingBottom: 12,
+					paddingTop: 10,
+					paddingHorizontal: 16
+				}}
+				className={cn(boxClassname)}
 			>
 				<View className={cn('absolute left-2 top-3', !searchIcon && 'hidden')}>
 					<Feather
 						name='search'
-						color={secondary ? Colors.secondary : Colors.gray500}
+						color={secondary ? Colors.secondary : colors.textSecondary}
 						size={16}
 					/>
 				</View>
 				<TextInput
 					autoCapitalize={'none'}
-					className={cn(
-						'text-white placeholder:text-gray-500',
-						secondary && 'text-secondary placeholder:text-secondary'
-					)}
-					style={[{ paddingLeft: searchIcon ? 18 : 0 }]}
+					style={[
+						{ paddingLeft: searchIcon ? 18 : 0, color: colors.text },
+					]}
+					placeholderTextColor={colors.textSecondary}
 					{...rest}
 				/>
 			</View>
-			{errorText && <Text className='text-red mb-2'>{errorText}</Text>}
+			{errorText && <Text style={{ color: Colors.primary }} className='mb-2'>{errorText}</Text>}
 		</>
 	)
 }

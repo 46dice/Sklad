@@ -1,5 +1,6 @@
 import { useCourierPayments } from '@/hooks/useCourierPayments'
 import { useCouriers } from '@/hooks/useCouriers'
+import { useTheme } from '@/providers/theme/ThemeProvider'
 import { ICourierPayment } from '@/shared/types/courier.types'
 import { Button } from '@/shared/ui/Button'
 import { Feather } from '@expo/vector-icons'
@@ -22,6 +23,7 @@ type Props = {
 const CourierPaymentCalculator: FC<Props> = ({ onClose, initialPeriodFrom, initialPeriodTo, onPeriodsChange }) => {
 	const { couriers } = useCouriers()
 	const { calculateCourierPayment, savePaymentCalculation, isLoading } = useCourierPayments()
+	const { colors } = useTheme()
 	const [selectedCourier, setSelectedCourier] = useState<string>('')
 	const [periodFrom, setPeriodFrom] = useState<string>(
 		initialPeriodFrom || new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split('T')[0]
@@ -37,20 +39,10 @@ const CourierPaymentCalculator: FC<Props> = ({ onClose, initialPeriodFrom, initi
 			alert('Выберите курьера')
 			return
 		}
-
-		// Сохраняем периоды
 		onPeriodsChange?.(periodFrom, periodTo)
-
 		const courier = couriers.find(c => c.id === selectedCourier)
 		if (!courier) return
-
-		const payment = await calculateCourierPayment(
-			selectedCourier,
-			courier.name,
-			periodFrom,
-			periodTo
-		)
-
+		const payment = await calculateCourierPayment(selectedCourier, courier.name, periodFrom, periodTo)
 		if (payment) {
 			setCalculatedPayment(payment)
 			setShowCalculation(true)
@@ -68,26 +60,32 @@ const CourierPaymentCalculator: FC<Props> = ({ onClose, initialPeriodFrom, initi
 	}
 
 	return (
-		<ScrollView className='flex-1 bg-black' contentContainerStyle={{ padding: 16 }}>
-			<Text className='text-white text-2xl font-bold mb-6'>Расчёт  курьеров</Text>
+		<ScrollView style={{ flex: 1, backgroundColor: colors.background }} contentContainerStyle={{ padding: 16 }}>
+			<Text style={{ color: colors.text, fontSize: 24, fontWeight: 'bold', marginBottom: 24 }}>Расчёт курьеров</Text>
 
 			{/* Выбор курьера */}
-			<View className='mb-4'>
-				<Text className='text-gray-300 text-sm font-medium mb-2'>Курьер *</Text>
-				<View className='bg-gray-default rounded-lg overflow-hidden'>
+			<View style={{ marginBottom: 16 }}>
+				<Text style={{ color: colors.textSecondary, fontSize: 14, fontWeight: '500', marginBottom: 8 }}>Курьер *</Text>
+				<View style={{ backgroundColor: colors.surface, borderRadius: 8, overflow: 'hidden' }}>
 					{couriers.map(courier => (
 						<TouchableOpacity
 							key={courier.id}
 							onPress={() => setSelectedCourier(courier.id)}
-							className={`p-3 border-b border-gray-600 flex-row items-center justify-between ${
-								selectedCourier === courier.id ? 'bg-primary/20' : ''
-							}`}
+							style={{
+								padding: 12,
+								borderBottomWidth: 1,
+								borderBottomColor: colors.border,
+								flexDirection: 'row',
+								alignItems: 'center',
+								justifyContent: 'space-between',
+								backgroundColor: selectedCourier === courier.id ? colors.primary + '20' : 'transparent'
+							}}
 						>
-							<Text className={`text-base ${selectedCourier === courier.id ? 'text-primary font-semibold' : 'text-white'}`}>
+							<Text style={{ fontSize: 16, color: selectedCourier === courier.id ? colors.primary : colors.text, fontWeight: selectedCourier === courier.id ? '600' : 'normal' }}>
 								{courier.name}
 							</Text>
 							{selectedCourier === courier.id && (
-								<Feather name='check' size={20} color='#BF3335' />
+								<Feather name='check' size={20} color={colors.primary} />
 							)}
 						</TouchableOpacity>
 					))}
@@ -95,25 +93,25 @@ const CourierPaymentCalculator: FC<Props> = ({ onClose, initialPeriodFrom, initi
 			</View>
 
 			{/* Период */}
-			<View className='mb-6'>
-				<Text className='text-gray-300 text-sm font-medium mb-2'>Период</Text>
-				<View className='flex-row gap-2'>
-					<View className='flex-1'>
-						<Text className='text-gray-400 text-xs mb-1'>От</Text>
+			<View style={{ marginBottom: 24 }}>
+				<Text style={{ color: colors.textSecondary, fontSize: 14, fontWeight: '500', marginBottom: 8 }}>Период</Text>
+				<View style={{ flexDirection: 'row', gap: 8 }}>
+					<View style={{ flex: 1 }}>
+						<Text style={{ color: colors.textSecondary, fontSize: 12, marginBottom: 4 }}>От</Text>
 						<TextInput
-							className='bg-gray-default text-white p-3 rounded-lg'
+							style={{ backgroundColor: colors.surface, color: colors.text, padding: 12, borderRadius: 8 }}
 							placeholder='YYYY-MM-DD'
-							placeholderTextColor='#666'
+							placeholderTextColor={colors.textSecondary}
 							value={periodFrom}
 							onChangeText={setPeriodFrom}
 						/>
 					</View>
-					<View className='flex-1'>
-						<Text className='text-gray-400 text-xs mb-1'>До</Text>
+					<View style={{ flex: 1 }}>
+						<Text style={{ color: colors.textSecondary, fontSize: 12, marginBottom: 4 }}>До</Text>
 						<TextInput
-							className='bg-gray-default text-white p-3 rounded-lg'
+							style={{ backgroundColor: colors.surface, color: colors.text, padding: 12, borderRadius: 8 }}
 							placeholder='YYYY-MM-DD'
-							placeholderTextColor='#666'
+							placeholderTextColor={colors.textSecondary}
 							value={periodTo}
 							onChangeText={setPeriodTo}
 						/>
@@ -121,80 +119,66 @@ const CourierPaymentCalculator: FC<Props> = ({ onClose, initialPeriodFrom, initi
 				</View>
 			</View>
 
-			{/* Кнопка расчёта */}
-			<Button
-				onPress={handleCalculate}
-				isLoading={isLoading}
-				disabled={!selectedCourier || isLoading}
-				className=''
-			>
+			<Button onPress={handleCalculate} isLoading={isLoading} disabled={!selectedCourier || isLoading}>
 				Рассчитать зарплату
 			</Button>
 
-			{/* Результаты расчёта */}
+			{/* Результаты */}
 			{showCalculation && calculatedPayment && (
-				<View className='mt-6 bg-gray-default rounded-lg p-4'>
-					<View className='flex-row items-center justify-between mb-4'>
-						<Text className='text-white text-lg font-bold'>Результат расчёта</Text>
+				<View style={{ marginTop: 24, backgroundColor: colors.surface, borderRadius: 8, padding: 16 }}>
+					<View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+						<Text style={{ color: colors.text, fontSize: 18, fontWeight: 'bold' }}>Результат расчёта</Text>
 						<TouchableOpacity onPress={() => setShowCalculation(false)}>
-							<Feather name='x' size={20} color='#666' />
+							<Feather name='x' size={20} color={colors.textSecondary} />
 						</TouchableOpacity>
 					</View>
 
-					{/* Информация о курьере */}
-					<View className='mb-4 pb-4 border-b border-gray-600'>
-						<Text className='text-gray-300 text-sm'>Курьер: <Text className='text-white font-semibold'>{calculatedPayment.courierName}</Text></Text>
-						<Text className='text-gray-300 text-sm mt-1'>Период: <Text className='text-white font-semibold'>{calculatedPayment.periodFrom} - {calculatedPayment.periodTo}</Text></Text>
+					<View style={{ marginBottom: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+						<Text style={{ color: colors.textSecondary, fontSize: 14 }}>Курьер: <Text style={{ color: colors.text, fontWeight: '600' }}>{calculatedPayment.courierName}</Text></Text>
+						<Text style={{ color: colors.textSecondary, fontSize: 14, marginTop: 4 }}>Период: <Text style={{ color: colors.text, fontWeight: '600' }}>{calculatedPayment.periodFrom} - {calculatedPayment.periodTo}</Text></Text>
 					</View>
 
-					{/* Статистика */}
-					<View className='mb-4 pb-4 border-b border-gray-600'>
-						<View className='flex-row justify-between mb-2'>
-							<Text className='text-gray-300 text-sm'>Всего доставок:</Text>
-							<Text className='text-white font-semibold'>{calculatedPayment.totalDeliveries}</Text>
+					<View style={{ marginBottom: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+						<View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+							<Text style={{ color: colors.textSecondary, fontSize: 14 }}>Всего доставок:</Text>
+							<Text style={{ color: colors.text, fontWeight: '600' }}>{calculatedPayment.totalDeliveries}</Text>
 						</View>
-						<View className='flex-row justify-between mb-2'>
-							<Text className='text-gray-300 text-sm'>Успешных:</Text>
-							<Text className='text-green-400 font-semibold'>{calculatedPayment.completedDeliveries}</Text>
+						<View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+							<Text style={{ color: colors.textSecondary, fontSize: 14 }}>Успешных:</Text>
+							<Text style={{ color: colors.success, fontWeight: '600' }}>{calculatedPayment.completedDeliveries}</Text>
 						</View>
-						<View className='flex-row justify-between'>
-							<Text className='text-gray-300 text-sm'>Неудачных:</Text>
-							<Text className='text-red-400 font-semibold'>{calculatedPayment.failedDeliveries}</Text>
+						<View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+							<Text style={{ color: colors.textSecondary, fontSize: 14 }}>Неудачных:</Text>
+							<Text style={{ color: colors.error, fontWeight: '600' }}>{calculatedPayment.failedDeliveries}</Text>
 						</View>
 					</View>
 
-					{/* Детали доставок */}
-					<View className='mb-4 pb-4 border-b border-gray-600'>
-						<Text className='text-white font-semibold mb-2'>Доставки:</Text>
+					<View style={{ marginBottom: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+						<Text style={{ color: colors.text, fontWeight: '600', marginBottom: 8 }}>Доставки:</Text>
 						{calculatedPayment.deliveries.map((delivery, idx) => (
-							<View key={idx} className='flex-row justify-between items-center py-2 border-b border-gray-700 last:border-b-0'>
-								<View className='flex-1'>
-									<Text className='text-gray-300 text-sm'>{delivery.taskNumber}</Text>
-									<Text className='text-gray-500 text-xs'>{delivery.destination}</Text>
+							<View key={idx} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+								<View style={{ flex: 1 }}>
+									<Text style={{ color: colors.text, fontSize: 14 }}>{delivery.taskNumber}</Text>
+									<Text style={{ color: colors.textSecondary, fontSize: 12 }}>{delivery.destination}</Text>
 								</View>
-								<View className='flex-row items-center gap-2'>
-									<Text className={`text-sm font-semibold ${delivery.status === 'delivered' ? 'text-green-400' : 'text-red-400'}`}>
+								<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+									<Text style={{ fontSize: 14, fontWeight: '600', color: delivery.status === 'delivered' ? colors.success : colors.error }}>
 										{delivery.status === 'delivered' ? '✓' : '✗'}
 									</Text>
-									<Text className='text-primary font-bold w-12 text-right'>{delivery.rate}₽</Text>
+									<Text style={{ color: colors.primary, fontWeight: 'bold', width: 48, textAlign: 'right' }}>{delivery.rate}₽</Text>
 								</View>
 							</View>
 						))}
 					</View>
 
-					{/* Итого */}
-					<View className='bg-primary/20 rounded-lg p-3 mb-4 border border-primary/30'>
-						<View className='flex-row justify-between items-center'>
-							<Text className='text-white font-bold text-lg'>Итого к выплате:</Text>
-							<Text className='text-primary font-bold text-2xl'>{calculatedPayment.totalEarnings}₽</Text>
+					<View style={{ backgroundColor: colors.primary + '20', borderRadius: 8, padding: 12, marginBottom: 16, borderWidth: 1, borderColor: colors.primary + '30' }}>
+						<View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+							<Text style={{ color: colors.text, fontWeight: 'bold', fontSize: 18 }}>Итого к выплате:</Text>
+							<Text style={{ color: colors.primary, fontWeight: 'bold', fontSize: 24 }}>{calculatedPayment.totalEarnings}₽</Text>
 						</View>
 					</View>
 
-					{/* Кнопка сохранения */}
-					<Button
-						onPress={handleSavePayment}
-						isLoading={isLoading}
-					>
+					<Button onPress={handleSavePayment} isLoading={isLoading}>
 						Сохранить расчёт
 					</Button>
 				</View>

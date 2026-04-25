@@ -3,14 +3,12 @@ import ProductList from '@/components/Products/ProductList'
 import { useNewProduct } from '@/components/Products/hooks/useNewProduct'
 import { useProducts } from '@/components/Products/hooks/useProducts'
 import { useAuth } from '@/hooks/useAuth'
+import { useTheme } from '@/providers/theme/ThemeProvider'
 import { INewProductForm } from '@/shared/types/products.types'
 import { Input } from '@/shared/ui/Input'
 import { useFocusEffect } from '@react-navigation/native'
 import { FC, useCallback } from 'react'
-import {
-    Alert,
-    View
-} from 'react-native'
+import { Alert, Text, View } from 'react-native'
 
 type Props = {}
 
@@ -18,6 +16,7 @@ const Products: FC<Props> = () => {
 	const { filteredProducts, isLoading, searchProducts, searchQuery, refreshProducts } = useProducts()
 	const { fetchDeleteProduct } = useNewProduct()
 	const { user } = useAuth()
+	const { colors } = useTheme()
 
 	useFocusEffect(
 		useCallback(() => {
@@ -30,11 +29,7 @@ const Products: FC<Props> = () => {
 			'Удалить товар?',
 			`Вы уверены, что хотите удалить товар "${product.name}"?`,
 			[
-				{
-					text: 'Отмена',
-					onPress: () => {},
-					style: 'cancel'
-				},
+				{ text: 'Отмена', onPress: () => {}, style: 'cancel' },
 				{
 					text: 'Удалить',
 					onPress: async () => {
@@ -50,24 +45,24 @@ const Products: FC<Props> = () => {
 	}
 
 	return (
-		<View className='flex-1'>
-			<View className='ml-auto flex-row gap-4 p-4'>
+		<View style={{ flex: 1, backgroundColor: colors.background }}>
+			<View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16 }}>
+				<Text style={{ color: colors.text, fontSize: 24, fontWeight: 'bold' }}>Услуги</Text>
 				<AddNewProduct />
 			</View>
-			<View className='px-4 mb-4'>
+			<View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
 				<Input
 					searchIcon
 					placeholder='Поиск по товарам'
-					// className='text-white'
 					value={searchQuery}
 					onChangeText={searchProducts}
 				/>
 			</View>
-			<View className='flex-1'>
+			<View style={{ flex: 1 }}>
 				<ProductList
 					products={filteredProducts}
 					isLoading={isLoading}
-					onEdit={() => {}} // Логика редактирования в самом ProductList
+					onEdit={() => {}}
 					onDelete={handleDelete}
 				/>
 			</View>
