@@ -1,15 +1,8 @@
+import { useTheme } from '@/providers/theme/ThemeProvider'
 import { INewInvoiceForm } from '@/shared/types/invoice.types'
 import { Feather } from '@expo/vector-icons'
 import { FC, useState } from 'react'
-import {
-	KeyboardAvoidingView,
-	Platform,
-	ScrollView,
-	Text,
-	TextInput,
-	TouchableOpacity,
-	View
-} from 'react-native'
+import { KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native'
 
 type Props = {
 	onSubmit: (data: INewInvoiceForm) => void
@@ -25,6 +18,7 @@ type Props = {
 }
 
 export const InvoiceForm: FC<Props> = ({ onSubmit, clients, initialPeriodFrom, initialPeriodTo, onPeriodsChange, initialClientId, initialClientName, initialClientInn, initialClientAddress, onClientChange }) => {
+	const { colors } = useTheme()
 	const [formData, setFormData] = useState<INewInvoiceForm>({
 		clientId: initialClientId || '',
 		clientName: initialClientName || '',
@@ -34,14 +28,10 @@ export const InvoiceForm: FC<Props> = ({ onSubmit, clients, initialPeriodFrom, i
 		periodTo: initialPeriodTo || new Date().toISOString().split('T')[0],
 		notes: ''
 	})
-
 	const [showClientDropdown, setShowClientDropdown] = useState(false)
 
 	const handleChange = (key: keyof INewInvoiceForm, value: any) => {
-		setFormData(prev => ({
-			...prev,
-			[key]: value
-		}))
+		setFormData(prev => ({ ...prev, [key]: value }))
 	}
 
 	const handleSelectClient = (clientId: string, clientName: string, inn: string, address: string) => {
@@ -50,110 +40,83 @@ export const InvoiceForm: FC<Props> = ({ onSubmit, clients, initialPeriodFrom, i
 		handleChange('clientInn', inn)
 		handleChange('clientAddress', address)
 		setShowClientDropdown(false)
-		// Сохраняем контрагента
 		onClientChange?.(clientId, clientName, inn, address)
 	}
 
 	const handleSubmit = () => {
 		if (!formData.clientId || !formData.periodFrom || !formData.periodTo) {
-			alert('Выберите контрагента и период')
-			return
+			alert('Выберите контрагента и период'); return
 		}
-
 		if (new Date(formData.periodFrom) > new Date(formData.periodTo)) {
-			alert('Дата начала не может быть позже даты конца')
-			return
+			alert('Дата начала не может быть позже даты конца'); return
 		}
-
-		// Сохраняем периоды
 		onPeriodsChange?.(formData.periodFrom, formData.periodTo)
-
 		onSubmit(formData)
 	}
 
 	return (
-		<KeyboardAvoidingView
-			behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-			className='flex-1'
-		>
-			<ScrollView
-				className='flex-1 bg-black'
-				contentContainerStyle={{ padding: 16 }}
-			>
-				{/* Client Selection */}
-				<View className='mb-4'>
-					<Text className='text-gray-300 text-sm font-medium mb-2'>
-						Контрагент *
-					</Text>
+		<KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+			<ScrollView style={{ flex: 1, backgroundColor: colors.background }} contentContainerStyle={{ padding: 16 }}>
+
+				{/* Контрагент */}
+				<View style={{ marginBottom: 16 }}>
+					<Text style={{ color: colors.textSecondary, fontSize: 14, fontWeight: '500', marginBottom: 8 }}>Контрагент *</Text>
 					<TouchableOpacity
 						onPress={() => setShowClientDropdown(!showClientDropdown)}
-						className='bg-gray-default p-3 rounded-lg flex-row items-center justify-between'
+						style={{ backgroundColor: colors.surface, padding: 12, borderRadius: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
 					>
-						<Text
-							className={`text-base ${formData.clientName ? 'text-white' : 'text-gray-500'}`}
-						>
+						<Text style={{ fontSize: 16, color: formData.clientName ? colors.text : colors.textSecondary }}>
 							{formData.clientName || 'Выберите контрагента'}
 						</Text>
-						<Feather
-							name={showClientDropdown ? 'chevron-up' : 'chevron-down'}
-							size={20}
-							color='#666'
-						/>
+						<Feather name={showClientDropdown ? 'chevron-up' : 'chevron-down'} size={20} color={colors.textSecondary} />
 					</TouchableOpacity>
-
 					{showClientDropdown && (
-						<View className='bg-gray-default mt-1 rounded-lg overflow-hidden'>
+						<View style={{ backgroundColor: colors.surface, marginTop: 4, borderRadius: 8, overflow: 'hidden' }}>
 							{clients.map(client => (
 								<TouchableOpacity
 									key={client.id}
 									onPress={() => handleSelectClient(client.id, client.name, client.inn, client.address)}
-									className='p-3 border-b border-gray-600'
+									style={{ padding: 12, borderBottomWidth: 1, borderBottomColor: colors.border }}
 								>
-									<Text className='text-white font-medium'>{client.name}</Text>
-									<Text className='text-gray-400 text-xs'>ИНН: {client.inn}</Text>
+									<Text style={{ color: colors.text, fontWeight: '500' }}>{client.name}</Text>
+									<Text style={{ color: colors.textSecondary, fontSize: 12 }}>ИНН: {client.inn}</Text>
 								</TouchableOpacity>
 							))}
 						</View>
 					)}
 				</View>
 
-				{/* Period From */}
-				<View className='mb-4'>
-					<Text className='text-gray-300 text-sm font-medium mb-2'>
-						Период с *
-					</Text>
+				{/* Период с */}
+				<View style={{ marginBottom: 16 }}>
+					<Text style={{ color: colors.textSecondary, fontSize: 14, fontWeight: '500', marginBottom: 8 }}>Период с *</Text>
 					<TextInput
-						className='bg-gray-default text-white p-3 rounded-lg'
+						style={{ backgroundColor: colors.surface, color: colors.text, padding: 12, borderRadius: 8 }}
 						placeholder='2026-01-01'
-						placeholderTextColor='#666'
+						placeholderTextColor={colors.textSecondary}
 						value={formData.periodFrom}
 						onChangeText={val => handleChange('periodFrom', val)}
 					/>
 				</View>
 
-				{/* Period To */}
-				<View className='mb-4'>
-					<Text className='text-gray-300 text-sm font-medium mb-2'>
-						Период по *
-					</Text>
+				{/* Период по */}
+				<View style={{ marginBottom: 16 }}>
+					<Text style={{ color: colors.textSecondary, fontSize: 14, fontWeight: '500', marginBottom: 8 }}>Период по *</Text>
 					<TextInput
-						className='bg-gray-default text-white p-3 rounded-lg'
+						style={{ backgroundColor: colors.surface, color: colors.text, padding: 12, borderRadius: 8 }}
 						placeholder='2026-01-31'
-						placeholderTextColor='#666'
+						placeholderTextColor={colors.textSecondary}
 						value={formData.periodTo}
 						onChangeText={val => handleChange('periodTo', val)}
 					/>
 				</View>
 
-				{/* Notes */}
-				<View className='mb-6'>
-					<Text className='text-gray-300 text-sm font-medium mb-2'>
-						Примечания
-					</Text>
+				{/* Примечания */}
+				<View style={{ marginBottom: 24 }}>
+					<Text style={{ color: colors.textSecondary, fontSize: 14, fontWeight: '500', marginBottom: 8 }}>Примечания</Text>
 					<TextInput
-						className='bg-gray-default text-white p-3 rounded-lg'
+						style={{ backgroundColor: colors.surface, color: colors.text, padding: 12, borderRadius: 8 }}
 						placeholder='Дополнительная информация...'
-						placeholderTextColor='#666'
+						placeholderTextColor={colors.textSecondary}
 						multiline
 						numberOfLines={3}
 						value={formData.notes}
@@ -161,15 +124,12 @@ export const InvoiceForm: FC<Props> = ({ onSubmit, clients, initialPeriodFrom, i
 					/>
 				</View>
 
-				{/* Submit Button */}
 				<TouchableOpacity
 					onPress={handleSubmit}
-					className='bg-primary p-4 rounded-lg flex-row items-center justify-center'
+					style={{ backgroundColor: colors.primary, padding: 16, borderRadius: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}
 				>
 					<Feather name='check' size={20} color='white' />
-					<Text className='text-white font-bold text-lg ml-2'>
-						Создать счет
-					</Text>
+					<Text style={{ color: 'white', fontWeight: 'bold', fontSize: 18, marginLeft: 8 }}>Создать счет</Text>
 				</TouchableOpacity>
 			</ScrollView>
 		</KeyboardAvoidingView>

@@ -1,6 +1,7 @@
-import { useClients } from '@/components/Clients/hooks/useClients'
 import { InvoiceForm } from '@/components/Contracts/InvoiceForm'
+import { useClients } from '@/hooks/useClients'
 import { useInvoices } from '@/hooks/useInvoices'
+import { useTheme } from '@/providers/theme/ThemeProvider'
 import { INewInvoiceForm } from '@/shared/types/invoice.types'
 import { Feather } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
@@ -9,19 +10,18 @@ import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native'
 
 const NewInvoiceModal: FC = () => {
 	const router = useRouter()
+	const { colors } = useTheme()
 	const { clients, isLoading: clientsLoading } = useClients()
 	const { saveInvoice } = useInvoices()
 	const [isProcessing, setIsProcessing] = useState(false)
-	const [invoicePeriodFrom, setInvoicePeriodFrom] = useState<string>(
+	const [invoicePeriodFrom, setInvoicePeriodFrom] = useState(
 		new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split('T')[0]
 	)
-	const [invoicePeriodTo, setInvoicePeriodTo] = useState<string>(
-		new Date().toISOString().split('T')[0]
-	)
-	const [invoiceClientId, setInvoiceClientId] = useState<string>('')
-	const [invoiceClientName, setInvoiceClientName] = useState<string>('')
-	const [invoiceClientInn, setInvoiceClientInn] = useState<string>('')
-	const [invoiceClientAddress, setInvoiceClientAddress] = useState<string>('')
+	const [invoicePeriodTo, setInvoicePeriodTo] = useState(new Date().toISOString().split('T')[0])
+	const [invoiceClientId, setInvoiceClientId] = useState('')
+	const [invoiceClientName, setInvoiceClientName] = useState('')
+	const [invoiceClientInn, setInvoiceClientInn] = useState('')
+	const [invoiceClientAddress, setInvoiceClientAddress] = useState('')
 
 	const clientsForSelect = clients.map((client: any) => ({
 		id: client.id,
@@ -34,10 +34,7 @@ const NewInvoiceModal: FC = () => {
 		setIsProcessing(true)
 		try {
 			const savedInvoice = await saveInvoice(formData)
-
-			if (savedInvoice) {
-				router.back()
-			}
+			if (savedInvoice) router.back()
 		} catch (error) {
 			console.error('Ошибка при создании счета:', error)
 		} finally {
@@ -47,9 +44,9 @@ const NewInvoiceModal: FC = () => {
 
 	if (clientsLoading || isProcessing) {
 		return (
-			<View className='flex-1 bg-black items-center justify-center'>
-				<ActivityIndicator size='large' color='#3B82F6' />
-				<Text className='text-white mt-4'>
+			<View style={{ flex: 1, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' }}>
+				<ActivityIndicator size='large' color={colors.primary} />
+				<Text style={{ color: colors.text, marginTop: 16 }}>
 					{isProcessing ? 'Создание счета...' : 'Загрузка данных...'}
 				</Text>
 			</View>
@@ -57,16 +54,13 @@ const NewInvoiceModal: FC = () => {
 	}
 
 	return (
-		<View className='flex-1 bg-black'>
-			{/* Header */}
-			<View className='flex-row items-center p-4 border-b border-gray-700'>
-				<TouchableOpacity onPress={() => router.back()} className='flex-row items-center gap-2'>
-					<Feather name='arrow-left' size={24} color='white' />
-					<Text className='text-white font-semibold'>Назад</Text>
+		<View style={{ flex: 1, backgroundColor: colors.background }}>
+			<View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+				<TouchableOpacity onPress={() => router.back()} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+					<Feather name='arrow-left' size={24} color={colors.text} />
+					<Text style={{ color: colors.text, fontWeight: '600' }}>Назад</Text>
 				</TouchableOpacity>
-				<Text className='text-white text-lg font-bold flex-1 ml-4'>
-					Новый счет
-				</Text>
+				<Text style={{ color: colors.text, fontSize: 18, fontWeight: 'bold', flex: 1, marginLeft: 16 }}>Новый счет</Text>
 			</View>
 
 			<InvoiceForm
@@ -74,19 +68,14 @@ const NewInvoiceModal: FC = () => {
 				clients={clientsForSelect}
 				initialPeriodFrom={invoicePeriodFrom}
 				initialPeriodTo={invoicePeriodTo}
-				onPeriodsChange={(from, to) => {
-					setInvoicePeriodFrom(from)
-					setInvoicePeriodTo(to)
-				}}
+				onPeriodsChange={(from, to) => { setInvoicePeriodFrom(from); setInvoicePeriodTo(to) }}
 				initialClientId={invoiceClientId}
 				initialClientName={invoiceClientName}
 				initialClientInn={invoiceClientInn}
 				initialClientAddress={invoiceClientAddress}
-				onClientChange={(clientId, clientName, clientInn, clientAddress) => {
-					setInvoiceClientId(clientId)
-					setInvoiceClientName(clientName)
-					setInvoiceClientInn(clientInn)
-					setInvoiceClientAddress(clientAddress)
+				onClientChange={(id, name, inn, address) => {
+					setInvoiceClientId(id); setInvoiceClientName(name)
+					setInvoiceClientInn(inn); setInvoiceClientAddress(address)
 				}}
 			/>
 		</View>

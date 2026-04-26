@@ -1,7 +1,8 @@
-import { useClients } from '@/components/Clients/hooks/useClients'
 import { ShipmentForm } from '@/components/Contracts/ShipmentForm'
 import { useProducts } from '@/components/Products/hooks/useProducts'
+import { useClients } from '@/hooks/useClients'
 import { useShipments } from '@/hooks/useShipments'
+import { useTheme } from '@/providers/theme/ThemeProvider'
 import { INewShipmentForm } from '@/shared/types/shipment.types'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { FC, useMemo, useState } from 'react'
@@ -10,14 +11,13 @@ import { ActivityIndicator, Text, View } from 'react-native'
 const EditShipmentModal: FC = () => {
 	const { id } = useLocalSearchParams()
 	const router = useRouter()
+	const { colors } = useTheme()
 	const { clients, isLoading: clientsLoading } = useClients()
 	const { products, isLoading: productsLoading } = useProducts()
 	const { shipments, updateShipment } = useShipments()
 	const [isProcessing, setIsProcessing] = useState(false)
 
-	const shipment = useMemo(() => {
-		return shipments.find(s => s.id === id)
-	}, [id, shipments])
+	const shipment = useMemo(() => shipments.find(s => s.id === id), [id, shipments])
 
 	const clientsForSelect = clients.map(client => ({
 		id: client.id,
@@ -26,7 +26,6 @@ const EditShipmentModal: FC = () => {
 		address: client.actualAddress || client.legalAddress || ''
 	}))
 
-	// Преобразуем товары в услуги
 	const servicesFromProducts = products.map(product => ({
 		id: product.id || '',
 		name: product.name,
@@ -35,8 +34,8 @@ const EditShipmentModal: FC = () => {
 
 	if (!shipment) {
 		return (
-			<View className='flex-1 bg-black items-center justify-center'>
-				<Text className='text-gray-400'>Акт не найден</Text>
+			<View style={{ flex: 1, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' }}>
+				<Text style={{ color: colors.textSecondary }}>Акт не найден</Text>
 			</View>
 		)
 	}
@@ -62,10 +61,7 @@ const EditShipmentModal: FC = () => {
 				totalAmount: formData.items.reduce((sum, item) => sum + item.totalAmount, 0),
 				notes: formData.notes
 			})
-
-			if (success) {
-				router.back()
-			}
+			if (success) router.back()
 		} catch (error) {
 			console.error('Ошибка при обновлении акта:', error)
 		} finally {
@@ -75,9 +71,9 @@ const EditShipmentModal: FC = () => {
 
 	if (clientsLoading || productsLoading || isProcessing) {
 		return (
-			<View className='flex-1 bg-black items-center justify-center'>
-				<ActivityIndicator size='large' color='#3B82F6' />
-				<Text className='text-white mt-4'>
+			<View style={{ flex: 1, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' }}>
+				<ActivityIndicator size='large' color={colors.primary} />
+				<Text style={{ color: colors.text, marginTop: 16 }}>
 					{isProcessing ? 'Сохранение акта...' : 'Загрузка данных...'}
 				</Text>
 			</View>
@@ -85,7 +81,7 @@ const EditShipmentModal: FC = () => {
 	}
 
 	return (
-		<View className='flex-1 bg-black'>
+		<View style={{ flex: 1, backgroundColor: colors.background }}>
 			<ShipmentForm
 				initialData={initialFormData}
 				onSubmit={handleUpdateShipment}

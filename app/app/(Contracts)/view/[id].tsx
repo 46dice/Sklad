@@ -1,5 +1,6 @@
 import { useAuth } from '@/hooks/useAuth'
 import { useShipments } from '@/hooks/useShipments'
+import { useTheme } from '@/providers/theme/ThemeProvider'
 import { ISupplierInfo } from '@/shared/types/shipment.types'
 import { exportShipmentToPDF } from '@/shared/utils/shipmentPDF'
 import { Feather } from '@expo/vector-icons'
@@ -7,64 +8,51 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { FC, useMemo, useState } from 'react'
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native'
 
-type Props = Record<string, never>
-
 const getStatusLabel = (status: string) => {
-	const labels: Record<string, string> = {
-		draft: 'Черновик',
-		completed: 'Завершен'
-	}
+	const labels: Record<string, string> = { draft: 'Черновик', completed: 'Завершен' }
 	return labels[status] || status
 }
 
 const getStatusColor = (status: string) => {
 	switch (status) {
-		case 'draft':
-			return '#F59E0B'
-		case 'completed':
-			return '#10B981'
-		default:
-			return '#9CA3AF'
+		case 'draft': return '#F59E0B'
+		case 'completed': return '#10B981'
+		default: return '#9CA3AF'
 	}
 }
 
-const ShipmentView: FC<Props> = () => {
+const ShipmentView: FC = () => {
 	const { id } = useLocalSearchParams()
 	const router = useRouter()
 	const { userProfile } = useAuth()
 	const { shipments, completeShipment } = useShipments()
+	const { colors } = useTheme()
 	const [isCompleting, setIsCompleting] = useState(false)
 	const [isExporting, setIsExporting] = useState(false)
 
-	const shipment = useMemo(() => {
-		return shipments.find(s => s.id === id)
-	}, [id, shipments])
+	const shipment = useMemo(() => shipments.find(s => s.id === id), [id, shipments])
 
-	// Получаем данные поставщика из профиля пользователя
-	const supplierInfo: ISupplierInfo = useMemo(() => {
-		const profile = userProfile
-		return {
-			name: profile?.supplierFullName || 'Поставщик',
-			inn: profile?.supplierInn || '',
-			address: profile?.supplierAddress || '',
-			bankName: profile?.supplierBankName || 'Банк',
-			bik: profile?.supplierBik || '',
-			accountNumber: profile?.supplierAccountNumber || '',
-			correspondentAccount: profile?.supplierCorrespondentAccount || ''
-		}
-	}, [userProfile])
+	const supplierInfo: ISupplierInfo = useMemo(() => ({
+		name: userProfile?.supplierFullName || 'Поставщик',
+		inn: userProfile?.supplierInn || '',
+		address: userProfile?.supplierAddress || '',
+		bankName: userProfile?.supplierBankName || 'Банк',
+		bik: userProfile?.supplierBik || '',
+		accountNumber: userProfile?.supplierAccountNumber || '',
+		correspondentAccount: userProfile?.supplierCorrespondentAccount || ''
+	}), [userProfile])
 
 	if (!shipment) {
 		return (
-			<View className='flex-1 bg-black'>
-				<View className='flex-row items-center p-4 border-b border-gray-700'>
+			<View style={{ flex: 1, backgroundColor: colors.background }}>
+				<View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: colors.border }}>
 					<TouchableOpacity onPress={() => router.back()}>
-						<Feather name='arrow-left' size={24} color='white' />
+						<Feather name='arrow-left' size={24} color={colors.text} />
 					</TouchableOpacity>
-					<Text className='text-white text-lg font-semibold ml-4'>Акт отгрузки</Text>
+					<Text style={{ color: colors.text, fontSize: 18, fontWeight: '600', marginLeft: 16 }}>Акт отгрузки</Text>
 				</View>
-				<View className='flex-1 items-center justify-center'>
-					<Text className='text-gray-400'>Акт не найден</Text>
+				<View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+					<Text style={{ color: colors.textSecondary }}>Акт не найден</Text>
 				</View>
 			</View>
 		)
@@ -85,14 +73,8 @@ const ShipmentView: FC<Props> = () => {
 	const handleExportPDF = async () => {
 		setIsExporting(true)
 		try {
-			// Логируем данные для отладки
-			console.log('Supplier Info:', supplierInfo)
-			console.log('User Profile:', userProfile)
-			
 			const success = await exportShipmentToPDF(shipment, supplierInfo)
-			if (!success) {
-				alert('Ошибка при экспорте в PDF')
-			}
+			if (!success) alert('Ошибка при экспорте в PDF')
 		} catch (error) {
 			alert('Ошибка: ' + String(error))
 		} finally {
@@ -103,136 +85,100 @@ const ShipmentView: FC<Props> = () => {
 	const totalAmount = shipment.items.reduce((sum, item) => sum + item.totalAmount, 0)
 
 	return (
-		<ScrollView className='flex-1 bg-black' contentContainerStyle={{ padding: 16 }}>
+		<ScrollView style={{ flex: 1, backgroundColor: colors.background }} contentContainerStyle={{ padding: 16 }}>
 			{/* Header */}
-			<View className='flex-row items-center justify-between mb-6'>
+			<View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
 				<TouchableOpacity onPress={() => router.back()}>
-					<Feather name='arrow-left' size={24} color='white' />
+					<Feather name='arrow-left' size={24} color={colors.text} />
 				</TouchableOpacity>
-				<Text className='text-white text-xl font-bold flex-1 ml-4'>
+				<Text style={{ color: colors.text, fontSize: 20, fontWeight: 'bold', flex: 1, marginLeft: 16 }}>
 					{shipment.actNumber}
 				</Text>
 			</View>
 
-			{/* Status Badge */}
-			<View className='mb-4'>
-				<View
-					className='px-3 py-1 rounded-full self-start'
-					style={{ backgroundColor: getStatusColor(shipment.status) + '20' }}
-				>
-					<Text
-						className='text-xs font-semibold'
-						style={{ color: getStatusColor(shipment.status) }}
-					>
+			{/* Status */}
+			<View style={{ marginBottom: 16 }}>
+				<View style={{ paddingHorizontal: 12, paddingVertical: 4, borderRadius: 999, alignSelf: 'flex-start', backgroundColor: getStatusColor(shipment.status) + '20' }}>
+					<Text style={{ fontSize: 12, fontWeight: '600', color: getStatusColor(shipment.status) }}>
 						{getStatusLabel(shipment.status)}
 					</Text>
 				</View>
 			</View>
 
-			{/* Shipment Info */}
-			<View className='bg-gray-default rounded-lg p-4 mb-4 gap-3'>
-				<View className='pb-3 border-b border-gray-600'>
-					<Text className='text-gray-400 text-sm'>Контрагент</Text>
-					<Text className='text-white font-semibold text-base'>{shipment.clientName}</Text>
-					<Text className='text-gray-500 text-xs mt-1'>ИНН: {shipment.clientInn}</Text>
+			{/* Info */}
+			<View style={{ backgroundColor: colors.surface, borderRadius: 8, padding: 16, marginBottom: 16, gap: 12 }}>
+				<View style={{ paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+					<Text style={{ color: colors.textSecondary, fontSize: 14 }}>Контрагент</Text>
+					<Text style={{ color: colors.text, fontWeight: '600', fontSize: 16 }}>{shipment.clientName}</Text>
+					<Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 4 }}>ИНН: {shipment.clientInn}</Text>
 				</View>
-
-				<View className='pb-3 border-b border-gray-600'>
-					<Text className='text-gray-400 text-sm'>Адрес</Text>
-					<Text className='text-white text-sm'>{shipment.clientAddress}</Text>
+				<View style={{ paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+					<Text style={{ color: colors.textSecondary, fontSize: 14 }}>Адрес</Text>
+					<Text style={{ color: colors.text, fontSize: 14 }}>{shipment.clientAddress}</Text>
 				</View>
-
-				<View className='pb-3 border-b border-gray-600'>
-					<Text className='text-gray-400 text-sm'>Сумма</Text>
-					<Text className='text-white font-semibold text-base'>
-						{totalAmount.toFixed(0)} ₽
-					</Text>
+				<View style={{ paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+					<Text style={{ color: colors.textSecondary, fontSize: 14 }}>Сумма</Text>
+					<Text style={{ color: colors.text, fontWeight: '600', fontSize: 16 }}>{totalAmount.toFixed(0)} ₽</Text>
 				</View>
-
 				<View>
-					<Text className='text-gray-400 text-sm'>Дата создания</Text>
-					<Text className='text-white text-sm'>
-						{new Date(shipment.createdAt).toLocaleDateString('ru-RU')}
-					</Text>
+					<Text style={{ color: colors.textSecondary, fontSize: 14 }}>Дата создания</Text>
+					<Text style={{ color: colors.text, fontSize: 14 }}>{new Date(shipment.createdAt).toLocaleDateString('ru-RU')}</Text>
 				</View>
 			</View>
 
 			{/* Services */}
 			{shipment.items && shipment.items.length > 0 ? (
-				<View className='mb-4'>
-					<Text className='text-white text-lg font-bold mb-3'>Услуги в акте</Text>
-					<View className='bg-gray-default rounded-lg overflow-hidden'>
-						{/* Заголовок таблицы */}
-						<View className='flex-row bg-gray-600 p-3 border-b border-gray-500'>
-							<View className='flex-1'>
-								<Text className='text-white font-semibold text-xs'>Услуга</Text>
-							</View>
-							<View className='w-16'>
-								<Text className='text-white font-semibold text-xs text-right'>Кол-во</Text>
-							</View>
-							<View className='w-20'>
-								<Text className='text-white font-semibold text-xs text-right'>Цена</Text>
-							</View>
-							<View className='w-20'>
-								<Text className='text-white font-semibold text-xs text-right'>Сумма</Text>
-							</View>
+				<View style={{ marginBottom: 16 }}>
+					<Text style={{ color: colors.text, fontSize: 18, fontWeight: 'bold', marginBottom: 12 }}>Услуги в акте</Text>
+					<View style={{ backgroundColor: colors.surface, borderRadius: 8, overflow: 'hidden' }}>
+						{/* Заголовок */}
+						<View style={{ flexDirection: 'row', backgroundColor: colors.border, padding: 12, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+							<View style={{ flex: 1 }}><Text style={{ color: colors.text, fontWeight: '600', fontSize: 12 }}>Услуга</Text></View>
+							<View style={{ width: 64 }}><Text style={{ color: colors.text, fontWeight: '600', fontSize: 12, textAlign: 'right' }}>Кол-во</Text></View>
+							<View style={{ width: 80 }}><Text style={{ color: colors.text, fontWeight: '600', fontSize: 12, textAlign: 'right' }}>Цена</Text></View>
+							<View style={{ width: 80 }}><Text style={{ color: colors.text, fontWeight: '600', fontSize: 12, textAlign: 'right' }}>Сумма</Text></View>
 						</View>
-
-						{/* Строки таблицы */}
 						{shipment.items.map((item, idx) => (
-							<View key={idx} className='flex-row p-3 border-b border-gray-500'>
-								<View className='flex-1'>
-									<Text className='text-white text-sm'>{item.serviceName}</Text>
-								</View>
-								<View className='w-16'>
-									<Text className='text-gray-300 text-sm text-right'>{item.quantity}</Text>
-								</View>
-								<View className='w-20'>
-									<Text className='text-gray-300 text-sm text-right'>{item.price}₽</Text>
-								</View>
-								<View className='w-20'>
-									<Text className='text-primary text-sm text-right font-semibold'>{item.totalAmount}₽</Text>
-								</View>
+							<View key={idx} style={{ flexDirection: 'row', padding: 12, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+								<View style={{ flex: 1 }}><Text style={{ color: colors.text, fontSize: 14 }}>{item.serviceName}</Text></View>
+								<View style={{ width: 64 }}><Text style={{ color: colors.textSecondary, fontSize: 14, textAlign: 'right' }}>{item.quantity}</Text></View>
+								<View style={{ width: 80 }}><Text style={{ color: colors.textSecondary, fontSize: 14, textAlign: 'right' }}>{item.price}₽</Text></View>
+								<View style={{ width: 80 }}><Text style={{ color: colors.primary, fontSize: 14, textAlign: 'right', fontWeight: '600' }}>{item.totalAmount}₽</Text></View>
 							</View>
 						))}
-
 						{/* Итого */}
-						<View className='flex-row p-3 bg-gray-700 border-t border-gray-500'>
-							<View className='flex-1' />
-							<View className='w-56 flex-row items-center justify-between'>
-								<Text className='text-white font-semibold'>Итого:</Text>
-								<Text className='text-primary font-bold'>
-									{totalAmount.toFixed(0)}₽
-								</Text>
+						<View style={{ flexDirection: 'row', padding: 12, backgroundColor: colors.border }}>
+							<View style={{ flex: 1 }} />
+							<View style={{ width: 224, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+								<Text style={{ color: colors.text, fontWeight: '600' }}>Итого:</Text>
+								<Text style={{ color: colors.primary, fontWeight: 'bold' }}>{totalAmount.toFixed(0)}₽</Text>
 							</View>
 						</View>
 					</View>
 				</View>
 			) : (
-				<View className='mb-4 bg-gray-default rounded-lg p-4'>
-					<Text className='text-gray-400 text-sm'>В акте нет услуг</Text>
+				<View style={{ marginBottom: 16, backgroundColor: colors.surface, borderRadius: 8, padding: 16 }}>
+					<Text style={{ color: colors.textSecondary, fontSize: 14 }}>В акте нет услуг</Text>
 				</View>
 			)}
 
 			{/* Notes */}
 			{shipment.notes && (
-				<View className='mb-4 bg-gray-default rounded-lg p-4'>
-					<Text className='text-gray-400 text-sm mb-2'>Примечания</Text>
-					<Text className='text-white text-sm'>{shipment.notes}</Text>
+				<View style={{ marginBottom: 16, backgroundColor: colors.surface, borderRadius: 8, padding: 16 }}>
+					<Text style={{ color: colors.textSecondary, fontSize: 14, marginBottom: 8 }}>Примечания</Text>
+					<Text style={{ color: colors.text, fontSize: 14 }}>{shipment.notes}</Text>
 				</View>
 			)}
 
 			{/* Actions */}
-			<View className='gap-3'>
+			<View style={{ gap: 12 }}>
 				<TouchableOpacity
 					onPress={handleExportPDF}
 					disabled={isExporting}
-					className={`p-3 rounded-lg flex-row items-center justify-center ${
-						isExporting ? 'bg-gray-600' : 'bg-blue-600'
-					}`}
+					style={{ padding: 12, borderRadius: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: isExporting ? colors.textSecondary : '#2563eb' }}
 				>
 					<Feather name='download' size={20} color='white' />
-					<Text className='text-white font-bold ml-2'>
+					<Text style={{ color: 'white', fontWeight: 'bold', marginLeft: 8 }}>
 						{isExporting ? 'Загрузка...' : 'Скачать PDF'}
 					</Text>
 				</TouchableOpacity>
@@ -241,12 +187,10 @@ const ShipmentView: FC<Props> = () => {
 					<TouchableOpacity
 						onPress={handleCompleteShipment}
 						disabled={isCompleting}
-						className={`p-3 rounded-lg flex-row items-center justify-center ${
-							isCompleting ? 'bg-gray-600' : 'bg-green-600'
-						}`}
+						style={{ padding: 12, borderRadius: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: isCompleting ? colors.textSecondary : '#16a34a' }}
 					>
 						<Feather name='check-circle' size={20} color='white' />
-						<Text className='text-white font-bold ml-2'>
+						<Text style={{ color: 'white', fontWeight: 'bold', marginLeft: 8 }}>
 							{isCompleting ? 'Завершение...' : 'Завершить акт'}
 						</Text>
 					</TouchableOpacity>
@@ -255,10 +199,10 @@ const ShipmentView: FC<Props> = () => {
 				{shipment.status === 'draft' && (
 					<TouchableOpacity
 						onPress={() => router.push(`/app/(Contracts)/edit/${shipment.id}`)}
-						className='bg-primary p-3 rounded-lg flex-row items-center justify-center'
+						style={{ backgroundColor: colors.primary, padding: 12, borderRadius: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}
 					>
 						<Feather name='edit' size={20} color='white' />
-						<Text className='text-white font-bold ml-2'>Редактировать</Text>
+						<Text style={{ color: 'white', fontWeight: 'bold', marginLeft: 8 }}>Редактировать</Text>
 					</TouchableOpacity>
 				)}
 			</View>
